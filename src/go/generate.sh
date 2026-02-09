@@ -2,7 +2,7 @@
 set -e
 
 # --- SETTINGS ---
-SCHEMA_URL="https://raw.githubusercontent.com/ExplosionHm/schemas-opticode/main/golang.fbs"
+SCHEMA_URL="https://raw.githubusercontent.com/Opticode-Project/schemas/main/golang.fbs"
 SCHEMA_NAME="go.fbs"
 OUTPUT_DIR="./"
 FLATC="flatc"     # assumes flatc is in PATH; change to absolute path if needed

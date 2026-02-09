@@ -4,9 +4,6 @@
 
 import * as flatbuffers from 'flatbuffers';
 
-import { TypeDef } from '../program/type-def.js';
-
-
 export class MapType {
   bb: flatbuffers.ByteBuffer|null = null;
   bb_pos = 0;
@@ -25,26 +22,26 @@ static getSizePrefixedRootAsMapType(bb:flatbuffers.ByteBuffer, obj?:MapType):Map
   return (obj || new MapType()).__init(bb.readInt32(bb.position()) + bb.position(), bb);
 }
 
-key(obj?:TypeDef):TypeDef|null {
+key():number {
   const offset = this.bb!.__offset(this.bb_pos, 4);
-  return offset ? (obj || new TypeDef()).__init(this.bb!.__indirect(this.bb_pos + offset), this.bb!) : null;
+  return offset ? this.bb!.readUint32(this.bb_pos + offset) : 0;
 }
 
-value(obj?:TypeDef):TypeDef|null {
+value():number {
   const offset = this.bb!.__offset(this.bb_pos, 6);
-  return offset ? (obj || new TypeDef()).__init(this.bb!.__indirect(this.bb_pos + offset), this.bb!) : null;
+  return offset ? this.bb!.readUint32(this.bb_pos + offset) : 0;
 }
 
 static startMapType(builder:flatbuffers.Builder) {
   builder.startObject(2);
 }
 
-static addKey(builder:flatbuffers.Builder, keyOffset:flatbuffers.Offset) {
-  builder.addFieldOffset(0, keyOffset, 0);
+static addKey(builder:flatbuffers.Builder, key:number) {
+  builder.addFieldInt32(0, key, 0);
 }
 
-static addValue(builder:flatbuffers.Builder, valueOffset:flatbuffers.Offset) {
-  builder.addFieldOffset(1, valueOffset, 0);
+static addValue(builder:flatbuffers.Builder, value:number) {
+  builder.addFieldInt32(1, value, 0);
 }
 
 static endMapType(builder:flatbuffers.Builder):flatbuffers.Offset {
@@ -52,4 +49,10 @@ static endMapType(builder:flatbuffers.Builder):flatbuffers.Offset {
   return offset;
 }
 
+static createMapType(builder:flatbuffers.Builder, key:number, value:number):flatbuffers.Offset {
+  MapType.startMapType(builder);
+  MapType.addKey(builder, key);
+  MapType.addValue(builder, value);
+  return MapType.endMapType(builder);
+}
 }

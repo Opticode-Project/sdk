@@ -45,7 +45,7 @@ export type TypeDef =
   | PointerType
   | InterfaceType
   | StructType
-  | FuncType
+  | FunctionType
   | MapType
   | ChanType
   | ArrayType
@@ -70,10 +70,11 @@ export interface StructType extends TypeHeader {
   }[];
 }
 
-export interface FuncType extends TypeHeader {
+export interface FunctionType extends TypeHeader {
   params: [string, TypeDef][];
   results: [string, TypeDef][];
-  method?: [string, TypeDef];
+  impl?: [string, TypeDef];
+  typeSig?: TypeDef;
 }
 
 export interface MapType extends TypeHeader {
@@ -269,12 +270,14 @@ export function Func(
   name: string,
   results: [string, TypeDef][],
   params: [string, TypeDef][],
-  method?: [string, TypeDef],
-): FuncType {
+  impl?: [string, TypeDef],
+  typeSig?: TypeDef,
+): FunctionType {
   return {
     base: Kind.FUNC,
     id: name,
-    method,
+    impl,
+    typeSig,
     params,
     results,
   };

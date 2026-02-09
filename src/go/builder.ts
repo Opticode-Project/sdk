@@ -1,7 +1,7 @@
 import * as fb from "flatbuffers";
 import * as go from "./golang";
 import * as program from "../program";
-import { FuncType, Kind, Type, TypeDef } from "./types";
+import { FunctionType, Kind, Type, TypeDef } from "./types";
 import {
   NodeId,
   INode,
@@ -214,10 +214,14 @@ export class GoBuilder extends IBuilder<go.Opcode, go.NodeFlag, go.ValueFlag> {
   }
 
   private createIndexed(opcode: go.Opcode, id?: string, fields?: GoNodeValue[]): Node {
+    let idOffset: fb.Offset | undefined;
+    if (id !== void 0)
+        idOffset = this.SetString(id);
+
     return {
       opcode,
       flags: go.NodeFlag.NodeIndexed,
-      id, fields,
+      id: idOffset, fields,
     };
   }
 
@@ -1609,7 +1613,7 @@ export class GoBuilder extends IBuilder<go.Opcode, go.NodeFlag, go.ValueFlag> {
   private TypeSignature(t: TypeDef): string {
     switch (t.base) {
       case Kind.FUNC: {
-        const f = t as FuncType;
+        const f = t as FunctionType;
 
         const params = f.params
           .map(([name, ty]) => `${name}:${this.TypeSignature(ty)}`)
@@ -1634,15 +1638,13 @@ export class GoBuilder extends IBuilder<go.Opcode, go.NodeFlag, go.ValueFlag> {
     switch (t.base) {
       case Kind.FUNC:
         typeOffset = this.CreateFuncType(t);
-        typeEnum = program.Type.FuncType;
+        typeEnum = program.Type.FunctionType;
         break;
     }
 
-    const idStringOffset = this.builder.createString(t.id);
-
     program.TypeDef.startTypeDef(this.builder);
     program.TypeDef.addBase(this.builder, this.HashString(t.base));
-    program.TypeDef.addId(this.builder, idStringOffset);
+    program.TypeDef.addId(this.builder, this.SetString(t.id));
     program.TypeDef.addTypeType(this.builder, typeEnum);
     program.TypeDef.addType(this.builder, typeOffset);
 
@@ -1665,15 +1667,19 @@ export class GoBuilder extends IBuilder<go.Opcode, go.NodeFlag, go.ValueFlag> {
     if (t.base !== Kind.FUNC)
       return 0;
 
-    const func = t as FuncType;
-    let method: fb.Offset = 0;
+    const func = t as FunctionType;
+    let impl: fb.Offset = 0;
 
-    if (func.method)
-      method = program.Pair.createPair(
+    if (func.impl)
+      impl = program.Pair.createPair(
         this.builder,
-        this.SetString(func.method[0]),
-        this.SetType(func.method[1]),
+        this.SetString(func.impl[0]),
+        this.SetType(func.impl[1]),
       );
+
+    let typeSig: fb.Offset = 0;
+    if (func.typeSig)
+        typeSig = this.SetType(func.typeSig);
 
     let paramsList: fb.Offset[] = [];
     for (const [val, ty] of func.params) {
@@ -1686,7 +1692,7 @@ export class GoBuilder extends IBuilder<go.Opcode, go.NodeFlag, go.ValueFlag> {
       );
     }
 
-    const params = program.FuncType.createParamsVector(
+    const params = program.FunctionType.createParamsVector(
       this.builder,
       paramsList,
     );
@@ -1701,17 +1707,18 @@ export class GoBuilder extends IBuilder<go.Opcode, go.NodeFlag, go.ValueFlag> {
         ),
       );
     }
-    const results = program.FuncType.createResultsVector(
+    const results = program.FunctionType.createResultsVector(
       this.builder,
       resultsList,
     );
 
-    program.FuncType.startFuncType(this.builder);
-    program.FuncType.addParams(this.builder, params);
-    program.FuncType.addResults(this.builder, results);
-    program.FuncType.addMethod(this.builder, method);
+    program.FunctionType.startFunctionType(this.builder);
+    program.FunctionType.addParams(this.builder, params);
+    program.FunctionType.addResults(this.builder, results);
+    program.FunctionType.addImpl(this.builder, impl);
+    program.FunctionType.addTypeSig(this.builder, typeSig);
 
-    const funcType = program.FuncType.endFuncType(this.builder);
+    const funcType = program.FunctionType.endFunctionType(this.builder);
     return funcType;
   }
 
@@ -1742,7 +1749,7 @@ export class GoBuilder extends IBuilder<go.Opcode, go.NodeFlag, go.ValueFlag> {
     const fieldsVector = program.IndexedNode.createFieldsVector(this.builder, fields);
 
     program.IndexedNode.startIndexedNode(this.builder);
-    program.IndexedNode.addId(this.builder, this.SetString(node.id || ""));
+    program.IndexedNode.addId(this.builder, node.id ?? 0);
     program.IndexedNode.addFields(this.builder, fieldsVector);
 
     return program.IndexedNode.endIndexedNode(this.builder);

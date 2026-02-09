@@ -26,7 +26,7 @@ export interface INode<
   next?: NodeId;
   flags: number;
   // Indexed Node
-  id?: string;
+  id?: number;
   fields?: TNodeValue[];
   // Binary Node
   left?: TNodeValue;

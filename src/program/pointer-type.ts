@@ -4,9 +4,6 @@
 
 import * as flatbuffers from 'flatbuffers';
 
-import { Type, unionToType, unionListToType } from '../program/type.js';
-
-
 export class PointerType {
   bb: flatbuffers.ByteBuffer|null = null;
   bb_pos = 0;
@@ -25,26 +22,17 @@ static getSizePrefixedRootAsPointerType(bb:flatbuffers.ByteBuffer, obj?:PointerT
   return (obj || new PointerType()).__init(bb.readInt32(bb.position()) + bb.position(), bb);
 }
 
-elemType():Type {
+elem():number {
   const offset = this.bb!.__offset(this.bb_pos, 4);
-  return offset ? this.bb!.readUint8(this.bb_pos + offset) : Type.NONE;
-}
-
-elem<T extends flatbuffers.Table>(obj:any):any|null {
-  const offset = this.bb!.__offset(this.bb_pos, 6);
-  return offset ? this.bb!.__union(obj, this.bb_pos + offset) : null;
+  return offset ? this.bb!.readUint32(this.bb_pos + offset) : 0;
 }
 
 static startPointerType(builder:flatbuffers.Builder) {
-  builder.startObject(2);
+  builder.startObject(1);
 }
 
-static addElemType(builder:flatbuffers.Builder, elemType:Type) {
-  builder.addFieldInt8(0, elemType, Type.NONE);
-}
-
-static addElem(builder:flatbuffers.Builder, elemOffset:flatbuffers.Offset) {
-  builder.addFieldOffset(1, elemOffset, 0);
+static addElem(builder:flatbuffers.Builder, elem:number) {
+  builder.addFieldInt32(0, elem, 0);
 }
 
 static endPointerType(builder:flatbuffers.Builder):flatbuffers.Offset {
@@ -52,10 +40,9 @@ static endPointerType(builder:flatbuffers.Builder):flatbuffers.Offset {
   return offset;
 }
 
-static createPointerType(builder:flatbuffers.Builder, elemType:Type, elemOffset:flatbuffers.Offset):flatbuffers.Offset {
+static createPointerType(builder:flatbuffers.Builder, elem:number):flatbuffers.Offset {
   PointerType.startPointerType(builder);
-  PointerType.addElemType(builder, elemType);
-  PointerType.addElem(builder, elemOffset);
+  PointerType.addElem(builder, elem);
   return PointerType.endPointerType(builder);
 }
 }
