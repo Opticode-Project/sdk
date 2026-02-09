@@ -30,11 +30,9 @@ base():number {
   return offset ? this.bb!.readUint32(this.bb_pos + offset) : 0;
 }
 
-id():string|null
-id(optionalEncoding:flatbuffers.Encoding):string|Uint8Array|null
-id(optionalEncoding?:any):string|Uint8Array|null {
+id():number {
   const offset = this.bb!.__offset(this.bb_pos, 6);
-  return offset ? this.bb!.__string(this.bb_pos + offset, optionalEncoding) : null;
+  return offset ? this.bb!.readUint32(this.bb_pos + offset) : 0;
 }
 
 typeType():Type {
@@ -47,16 +45,21 @@ type<T extends flatbuffers.Table>(obj:any):any|null {
   return offset ? this.bb!.__union(obj, this.bb_pos + offset) : null;
 }
 
+flags():number {
+  const offset = this.bb!.__offset(this.bb_pos, 12);
+  return offset ? this.bb!.readUint32(this.bb_pos + offset) : 0;
+}
+
 static startTypeDef(builder:flatbuffers.Builder) {
-  builder.startObject(4);
+  builder.startObject(5);
 }
 
 static addBase(builder:flatbuffers.Builder, base:number) {
   builder.addFieldInt32(0, base, 0);
 }
 
-static addId(builder:flatbuffers.Builder, idOffset:flatbuffers.Offset) {
-  builder.addFieldOffset(1, idOffset, 0);
+static addId(builder:flatbuffers.Builder, id:number) {
+  builder.addFieldInt32(1, id, 0);
 }
 
 static addTypeType(builder:flatbuffers.Builder, typeType:Type) {
@@ -67,17 +70,22 @@ static addType(builder:flatbuffers.Builder, typeOffset:flatbuffers.Offset) {
   builder.addFieldOffset(3, typeOffset, 0);
 }
 
+static addFlags(builder:flatbuffers.Builder, flags:number) {
+  builder.addFieldInt32(4, flags, 0);
+}
+
 static endTypeDef(builder:flatbuffers.Builder):flatbuffers.Offset {
   const offset = builder.endObject();
   return offset;
 }
 
-static createTypeDef(builder:flatbuffers.Builder, base:number, idOffset:flatbuffers.Offset, typeType:Type, typeOffset:flatbuffers.Offset):flatbuffers.Offset {
+static createTypeDef(builder:flatbuffers.Builder, base:number, id:number, typeType:Type, typeOffset:flatbuffers.Offset, flags:number):flatbuffers.Offset {
   TypeDef.startTypeDef(builder);
   TypeDef.addBase(builder, base);
-  TypeDef.addId(builder, idOffset);
+  TypeDef.addId(builder, id);
   TypeDef.addTypeType(builder, typeType);
   TypeDef.addType(builder, typeOffset);
+  TypeDef.addFlags(builder, flags);
   return TypeDef.endTypeDef(builder);
 }
 }

@@ -11,7 +11,9 @@ export interface BuilderOptions {
 export type NodeId = bigint;
 
 export interface INodeValue {
+  /** literal or pointer */
   value: string | NodeId;
+  /** value semantics */
   flags: number;
 }
 
@@ -24,7 +26,7 @@ export interface INode<
   next?: NodeId;
   flags: number;
   // Indexed Node
-  id?: string;
+  id?: number;
   fields?: TNodeValue[];
   // Binary Node
   left?: TNodeValue;
@@ -87,8 +89,24 @@ export abstract class IBuilder<
     return program.App.createTypesVector(this.builder, offsets);
   };
 
-
+  /**
+   * Registers a node in the builder and assigns it a {@link NodeId}.
+   *
+   * This mirrors a frontend "block placed on canvas" action.
+   * The node is immediately serialized to FlatBuffers and
+   * stores the node and its binary offset.
+   * 
+   * @param node The node to register
+   * @param id Optional explicit {@link NodeId} (used when restoring state)
+   */
   public abstract SetNode(node: INode<TOpcode>, id?: NodeId): NodeId;
+
+  /**
+   * Removes a node from the graph.
+   * 
+   * If `recursive` is true, referenced child nodes may also be deleted
+   * depending on their value flags.
+   */
   public abstract DeleteNode(id: NodeId, recursive?: boolean): void;
 
   public PrintNodes(): void {
@@ -156,7 +174,15 @@ export abstract class IBuilder<
     
     return this.builder.asUint8Array();
   }
-    
+  
+  /**
+   * Exports the current program as a FlatBuffers binary.
+   *
+   * Uses already-built node offsets and includes all lookup tables.
+   * This is fast and does not rebuild nodes.
+   * 
+   * Intended for saving the final output to disk or sending to the compiler.
+   */
   public Export(flags: number = 0): Uint8Array {
     const nodeOffsets: fb.Offset[] = Array.from(this.nodes.values()).map(
       ([_, offset]) => offset,
@@ -164,7 +190,15 @@ export abstract class IBuilder<
     
     return this.buildApp(nodeOffsets, flags, true);
   }
-    
+  
+  /**
+   * Rebuilds all nodes and re-emits the FlatBuffers program.
+   *
+   * This clears the FlatBuffers builder but preserves the logical graph.
+   * Lookup tables are reused.
+   * 
+   * 
+   */
   public async Rebuild(flags: number = 0): Promise<Uint8Array> {
     return new Promise((resolve, reject) => {
       this.builder.clear();

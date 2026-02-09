@@ -4,9 +4,6 @@
 
 import * as flatbuffers from 'flatbuffers';
 
-import { TypeDef } from '../program/type-def.js';
-
-
 export class ArrayType {
   bb: flatbuffers.ByteBuffer|null = null;
   bb_pos = 0;
@@ -25,9 +22,9 @@ static getSizePrefixedRootAsArrayType(bb:flatbuffers.ByteBuffer, obj?:ArrayType)
   return (obj || new ArrayType()).__init(bb.readInt32(bb.position()) + bb.position(), bb);
 }
 
-elem(obj?:TypeDef):TypeDef|null {
+elem():number {
   const offset = this.bb!.__offset(this.bb_pos, 4);
-  return offset ? (obj || new TypeDef()).__init(this.bb!.__indirect(this.bb_pos + offset), this.bb!) : null;
+  return offset ? this.bb!.readUint32(this.bb_pos + offset) : 0;
 }
 
 size():bigint {
@@ -39,8 +36,8 @@ static startArrayType(builder:flatbuffers.Builder) {
   builder.startObject(2);
 }
 
-static addElem(builder:flatbuffers.Builder, elemOffset:flatbuffers.Offset) {
-  builder.addFieldOffset(0, elemOffset, 0);
+static addElem(builder:flatbuffers.Builder, elem:number) {
+  builder.addFieldInt32(0, elem, 0);
 }
 
 static addSize(builder:flatbuffers.Builder, size:bigint) {
@@ -52,9 +49,9 @@ static endArrayType(builder:flatbuffers.Builder):flatbuffers.Offset {
   return offset;
 }
 
-static createArrayType(builder:flatbuffers.Builder, elemOffset:flatbuffers.Offset, size:bigint):flatbuffers.Offset {
+static createArrayType(builder:flatbuffers.Builder, elem:number, size:bigint):flatbuffers.Offset {
   ArrayType.startArrayType(builder);
-  ArrayType.addElem(builder, elemOffset);
+  ArrayType.addElem(builder, elem);
   ArrayType.addSize(builder, size);
   return ArrayType.endArrayType(builder);
 }

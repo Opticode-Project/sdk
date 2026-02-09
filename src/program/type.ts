@@ -3,56 +3,52 @@
 /* eslint-disable @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any, @typescript-eslint/no-non-null-assertion */
 
 import { ArrayType } from '../program/array-type.js';
-import { ChanType } from '../program/chan-type.js';
-import { FuncType } from '../program/func-type.js';
-import { InterfaceType } from '../program/interface-type.js';
+import { FunctionType } from '../program/function-type.js';
 import { MapType } from '../program/map-type.js';
 import { PointerType } from '../program/pointer-type.js';
-import { StructType } from '../program/struct-type.js';
+import { StructureType } from '../program/structure-type.js';
+import { TupleType } from '../program/tuple-type.js';
 
 
 export enum Type {
   NONE = 0,
   PointerType = 1,
-  InterfaceType = 2,
-  StructType = 3,
-  FuncType = 4,
-  MapType = 5,
-  ArrayType = 6,
-  ChanType = 7
+  StructureType = 2,
+  FunctionType = 3,
+  MapType = 4,
+  ArrayType = 5,
+  TupleType = 6
 }
 
 export function unionToType(
   type: Type,
-  accessor: (obj:ArrayType|ChanType|FuncType|InterfaceType|MapType|PointerType|StructType) => ArrayType|ChanType|FuncType|InterfaceType|MapType|PointerType|StructType|null
-): ArrayType|ChanType|FuncType|InterfaceType|MapType|PointerType|StructType|null {
+  accessor: (obj:ArrayType|FunctionType|MapType|PointerType|StructureType|TupleType) => ArrayType|FunctionType|MapType|PointerType|StructureType|TupleType|null
+): ArrayType|FunctionType|MapType|PointerType|StructureType|TupleType|null {
   switch(Type[type]) {
     case 'NONE': return null; 
     case 'PointerType': return accessor(new PointerType())! as PointerType;
-    case 'InterfaceType': return accessor(new InterfaceType())! as InterfaceType;
-    case 'StructType': return accessor(new StructType())! as StructType;
-    case 'FuncType': return accessor(new FuncType())! as FuncType;
+    case 'StructureType': return accessor(new StructureType())! as StructureType;
+    case 'FunctionType': return accessor(new FunctionType())! as FunctionType;
     case 'MapType': return accessor(new MapType())! as MapType;
     case 'ArrayType': return accessor(new ArrayType())! as ArrayType;
-    case 'ChanType': return accessor(new ChanType())! as ChanType;
+    case 'TupleType': return accessor(new TupleType())! as TupleType;
     default: return null;
   }
 }
 
 export function unionListToType(
   type: Type, 
-  accessor: (index: number, obj:ArrayType|ChanType|FuncType|InterfaceType|MapType|PointerType|StructType) => ArrayType|ChanType|FuncType|InterfaceType|MapType|PointerType|StructType|null, 
+  accessor: (index: number, obj:ArrayType|FunctionType|MapType|PointerType|StructureType|TupleType) => ArrayType|FunctionType|MapType|PointerType|StructureType|TupleType|null, 
   index: number
-): ArrayType|ChanType|FuncType|InterfaceType|MapType|PointerType|StructType|null {
+): ArrayType|FunctionType|MapType|PointerType|StructureType|TupleType|null {
   switch(Type[type]) {
     case 'NONE': return null; 
     case 'PointerType': return accessor(index, new PointerType())! as PointerType;
-    case 'InterfaceType': return accessor(index, new InterfaceType())! as InterfaceType;
-    case 'StructType': return accessor(index, new StructType())! as StructType;
-    case 'FuncType': return accessor(index, new FuncType())! as FuncType;
+    case 'StructureType': return accessor(index, new StructureType())! as StructureType;
+    case 'FunctionType': return accessor(index, new FunctionType())! as FunctionType;
     case 'MapType': return accessor(index, new MapType())! as MapType;
     case 'ArrayType': return accessor(index, new ArrayType())! as ArrayType;
-    case 'ChanType': return accessor(index, new ChanType())! as ChanType;
+    case 'TupleType': return accessor(index, new TupleType())! as TupleType;
     default: return null;
   }
 }
