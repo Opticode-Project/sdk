@@ -13,7 +13,7 @@ import {
   Array,
   ArrayType,
   StructType,
-  FuncType,
+  FunctionType,
   InterfaceType,
   Int,
 } from "./go/types";

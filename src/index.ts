@@ -7,7 +7,7 @@ export {
   Complex,
   StructType,
   Struct,
-  FuncType,
+  FunctionType,
   Func,
   TypeDef,
   TypeHeader,
