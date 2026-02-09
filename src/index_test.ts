@@ -1,5 +1,4 @@
-import { fstat, writeFile } from "fs";
-import { GoBuilder, GoBuilderOptions, FuncDef } from "./go/builder";
+import { GoBuilder, GoBuilderOptions, FuncImpl } from "./go/builder";
 import { NodeId } from "./ibuilder";
 import {
   Func,
@@ -95,7 +94,7 @@ for (let i = 0; i < 1; i++) {
 
   let params: NodeId[] = [ builder.SetNode(paramNode) ];
 
-  const mainFuncDef: FuncDef = {
+  const mainFuncDef: FuncImpl = {
     type: mainFuncType,
     params,
     body,

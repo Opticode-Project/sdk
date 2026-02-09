@@ -23,7 +23,7 @@ export interface Node extends INode<go.Opcode, GoNodeValue> {
 
 }
 
-export interface FuncDef {
+export interface FuncImpl {
   type: TypeDef; // Must be of FuncType
   params?: NodeId[]; // Input parameters
   body?: NodeId[]; // Array of node id
@@ -401,7 +401,7 @@ export class GoBuilder extends IBuilder<go.Opcode, go.NodeFlag, go.ValueFlag> {
    * func main() {}
    * ```
    */
-  public CreateFuncNode(def: FuncDef): Node {
+  public CreateFuncNode(def: FuncImpl): Node {
     const meta: GoNodeValue = {
       type: def.type,
       value: 0n,
