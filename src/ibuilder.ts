@@ -19,7 +19,7 @@ export interface INodeValue {
 
 export interface INode<
   TOpcode extends number,
-  TNodeValue extends INodeValue = INodeValue
+  TNodeValue extends INodeValue = INodeValue,
 > {
   opcode: TOpcode;
   parent?: NodeId;
@@ -38,7 +38,7 @@ export interface INode<
 export abstract class IBuilder<
   TOpcode extends number,
   TNodeFlag extends number,
-  TValueFlag extends number
+  TValueFlag extends number,
 > {
   protected builder: fb.Builder;
   protected nodes = new Map<NodeId, [INode<TOpcode>, fb.Offset]>();
@@ -47,14 +47,13 @@ export abstract class IBuilder<
 
   constructor(protected builderOptions: BuilderOptions) {
     this.builder = new fb.Builder(builderOptions.size ?? 1024);
-  };
+  }
 
   protected abstract buildNode(node: INode<TOpcode>, id: NodeId): fb.Offset;
 
   private CreateStringLUT(): fb.Offset {
     // Convert to array and sort numerically by key
-    const entries = Array.from(this.stringlut)
-      .sort(([a], [b]) => a - b);
+    const entries = Array.from(this.stringlut).sort(([a], [b]) => a - b);
 
     const offsets: fb.Offset[] = [];
 
@@ -67,14 +66,15 @@ export abstract class IBuilder<
 
       offsets.push(program.StringEntry.endStringEntry(this.builder));
     }
-  
+
     return program.App.createLutVector(this.builder, offsets);
-  };
+  }
 
   private CreateTypeLUT(): fb.Offset {
     // Convert to array and sort numerically by key
-    const entries = Array.from(this.typelut.entries())
-      .sort(([a], [b]) => a - b);
+    const entries = Array.from(this.typelut.entries()).sort(
+      ([a], [b]) => a - b,
+    );
 
     const offsets: fb.Offset[] = [];
 
@@ -87,7 +87,7 @@ export abstract class IBuilder<
     }
 
     return program.App.createTypesVector(this.builder, offsets);
-  };
+  }
 
   /**
    * Registers a node in the builder and assigns it a {@link NodeId}.
@@ -95,7 +95,7 @@ export abstract class IBuilder<
    * This mirrors a frontend "block placed on canvas" action.
    * The node is immediately serialized to FlatBuffers and
    * stores the node and its binary offset.
-   * 
+   *
    * @param node The node to register
    * @param id Optional explicit {@link NodeId} (used when restoring state)
    */
@@ -103,7 +103,7 @@ export abstract class IBuilder<
 
   /**
    * Removes a node from the graph.
-   * 
+   *
    * If `recursive` is true, referenced child nodes may also be deleted
    * depending on their value flags.
    */
@@ -122,82 +122,87 @@ export abstract class IBuilder<
       console.log(`${hash} -> ${string}`);
     }
   }
-
+  /**
+   * @deprecated This is no longer needed
+   */
   protected HashString(s: string): number {
     // cite: https://en.wikipedia.org/wiki/Fowler%E2%80%93Noll%E2%80%93Vo_hash_function
     let hash = 0x811c9dc5; // FNV-1a 32-bit offset basis
-  
+
     for (let i = 0; i < s.length; i++) {
       hash ^= s.charCodeAt(i);
       hash = (hash * 0x01000193) >>> 0; // FNV prime and force 32-bit
     }
-  
+
     return hash >>> 0;
   }
-  
+
   public SetString(s: string): number {
     const hash = this.HashString(s);
-  
+
     this.stringlut.set(hash, s);
     return hash;
   }
 
   // Export / Rebuild
-    
+
   private buildApp(
     nodeOffsets: fb.Offset[],
     flags: number,
     includeLUT: boolean,
   ): Uint8Array {
-    const nodesVector = program.App.createNodesVector(this.builder, nodeOffsets);
-    
+    const nodesVector = program.App.createNodesVector(
+      this.builder,
+      nodeOffsets,
+    );
+
     const stringLut: fb.Offset = includeLUT ? this.CreateStringLUT() : 0;
     const typeLut: fb.Offset = this.CreateTypeLUT();
-    
+
     const name = this.builder.createString(
       this.builderOptions.name ?? "Unnamed Program",
     );
-    
+
     program.App.startApp(this.builder);
     program.App.addNodes(this.builder, nodesVector);
-    
+
     if (includeLUT) {
       program.App.addLut(this.builder, stringLut);
     }
-    
+
     program.App.addTypes(this.builder, typeLut);
     program.App.addFlags(this.builder, flags);
     program.App.addName(this.builder, name);
-    
+
     const programOffset = program.App.endApp(this.builder);
     this.builder.finish(programOffset);
-    
+
     return this.builder.asUint8Array();
   }
-  
+
   /**
    * Exports the current program as a FlatBuffers binary.
    *
    * Uses already-built node offsets and includes all lookup tables.
    * This is fast and does not rebuild nodes.
-   * 
+   *
    * Intended for saving the final output to disk or sending to the compiler.
    */
   public Export(flags: number = 0): Uint8Array {
     const nodeOffsets: fb.Offset[] = Array.from(this.nodes.values()).map(
       ([_, offset]) => offset,
     );
-    
+
     return this.buildApp(nodeOffsets, flags, true);
   }
-  
+
   /**
    * Rebuilds all nodes and re-emits the FlatBuffers program.
    *
    * This clears the FlatBuffers builder but preserves the logical graph.
    * Lookup tables are reused.
-   * 
-   * 
+   *
+   *
    */
   public async Rebuild(flags: number = 0): Promise<Uint8Array> {
     return new Promise((resolve, reject) => {
@@ -207,18 +212,18 @@ export abstract class IBuilder<
       for (const [id, [node, offset]] of this.nodes) {
         const nodeOffset = this.buildNode(node, id);
         this.nodes.set(id, [node, nodeOffset]);
-    
+
         nodeOffsets.push(nodeOffset);
       }
-    
+
       resolve(this.buildApp(nodeOffsets, flags, false));
     });
   }
-    
+
   public Clear() {
     this.builder.clear();
     this.nodes.clear();
     this.stringlut.clear();
     this.typelut.clear();
   }
-};
+}

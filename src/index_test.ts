@@ -84,15 +84,19 @@ for (let i = 0; i < 1; i++) {
     );
 
     const varId = builder.SetNode(builder.CreateVarNode(varValue));
-    const callId = builder.SetNode(builder.CreateCallNode("fmt.Println", [varId]));
+    const callId = builder.SetNode(
+      builder.CreateCallNode("fmt.Println", [varId]),
+    );
     body.push(varId);
   }
 
   const paramNode = builder.CreateConstValueNode(
-    "meow", String("Test"), "something"
+    "meow",
+    String("Test"),
+    "something",
   );
 
-  let params: NodeId[] = [ builder.SetNode(paramNode) ];
+  let params: NodeId[] = [builder.SetNode(paramNode)];
 
   const mainFuncDef: FuncImpl = {
     type: mainFuncType,
@@ -144,14 +148,9 @@ function sleep(ms: number): Promise<void> {
     console.log(output);
     console.log(`size: ${formatBytes(output.length)}`);
     let { signal } = new AbortController();
-    writeFile(
-      "./nodes.opt",
-      output,
-      { signal },
-      (err) => {
-        if (!err) return;
-        console.error(err);
-      },
-    );
+    writeFile("./nodes.opt", output, { signal }, (err) => {
+      if (!err) return;
+      console.error(err);
+    });
   })();
 }
