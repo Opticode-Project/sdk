@@ -1,7 +1,7 @@
 import * as fb from "flatbuffers";
 import * as go from "./golang";
 import * as program from "../program";
-import { FunctionType, Kind, Type, TypeDef } from "./types";
+import { GoFunctionType, GoKind, GoType, GoTypeDef, KindMapper } from "./types";
 import {
   NodeId,
   INode,
@@ -13,13 +13,13 @@ import {
 export interface GoBuilderOptions extends BuilderOptions {}
 
 export interface GoNodeValue extends INodeValue {
-  type?: TypeDef;
+  type?: GoTypeDef;
 }
 
 export interface Node extends INode<go.Opcode, GoNodeValue> {}
 
 export interface FuncImpl {
-  type: TypeDef; // Must be of FuncType
+  type: GoTypeDef; // Must be of GoFuncType
   params?: NodeId[]; // Input parameters
   body?: NodeId[]; // Array of node id
 }
@@ -165,7 +165,7 @@ export class GoBuilder extends IBuilder<go.Opcode, go.NodeFlag, go.ValueFlag> {
     };
   }
 
-  private makeValue(v: string | NodeId, t?: TypeDef): GoNodeValue {
+  private makeValue(v: string | NodeId, t?: GoTypeDef): GoNodeValue {
     let flags: number;
 
     if (typeof v === "bigint") {
@@ -322,7 +322,7 @@ export class GoBuilder extends IBuilder<go.Opcode, go.NodeFlag, go.ValueFlag> {
 
   public CreateConstValueNode(
     name: string,
-    type: TypeDef,
+    type: GoTypeDef,
     value: string,
   ): Node {
     return {
@@ -361,7 +361,11 @@ export class GoBuilder extends IBuilder<go.Opcode, go.NodeFlag, go.ValueFlag> {
     );
   }
 
-  public CreateVarValueNode(name: string, type: TypeDef, value: string): Node {
+  public CreateVarValueNode(
+    name: string,
+    type: GoTypeDef,
+    value: string,
+  ): Node {
     return {
       opcode: go.Opcode.VarValue,
       flags: go.NodeFlag.NodeBinary,
@@ -386,7 +390,7 @@ export class GoBuilder extends IBuilder<go.Opcode, go.NodeFlag, go.ValueFlag> {
    * type MyStruct struct { ... }
    * ```
    */
-  public CreateTypeNode(type: TypeDef): Node {
+  public CreateTypeNode(type: GoTypeDef): Node {
     return this.createIndexed(go.Opcode.Type, type.id, [
       {
         type,
@@ -1498,7 +1502,7 @@ export class GoBuilder extends IBuilder<go.Opcode, go.NodeFlag, go.ValueFlag> {
    * new(T)
    * ```
    */
-  public New(_type: Type): Node {
+  public New(_type: GoType): Node {
     return this.createUnary(go.Opcode.New, 0n);
   }
 
@@ -1598,7 +1602,7 @@ export class GoBuilder extends IBuilder<go.Opcode, go.NodeFlag, go.ValueFlag> {
    * close(ch)
    * ```
    */
-  public CreateCloseNode(chan: Type): Node {
+  public CreateCloseNode(chan: GoType): Node {
     // WARN - NEEDS ATTENTION
     return this.createUnary(go.Opcode.Close, 0n);
   }
@@ -1631,40 +1635,51 @@ export class GoBuilder extends IBuilder<go.Opcode, go.NodeFlag, go.ValueFlag> {
     );
   }
 
-  private TypeSignature(t: TypeDef): string {
-    switch (t.base) {
-      case Kind.FUNC: {
-        const f = t as FunctionType;
+  // private TypeSignature(t: TypeDef): string {
+  //   switch (t.base) {
+  //     case Kind.FUNC: {
+  //       const f = t as FunctionType;
 
-        const params = f.params
-          .map(([name, ty]) => `${name}:${this.TypeSignature(ty)}`)
-          .join(",");
+  //       const params = f.params
+  //         .map(([name, ty]) => `${name}:${this.TypeSignature(ty)}`)
+  //         .join(",");
 
-        const results = f.results
-          .map(([name, ty]) => `${name}:${this.TypeSignature(ty)}`)
-          .join(",");
+  //       const results = f.results
+  //         .map(([name, ty]) => `${name}:${this.TypeSignature(ty)}`)
+  //         .join(",");
 
-        return `func(${params})->(${results})`;
-      }
+  //       return `func(${params})->(${results})`;
+  //     }
 
-      default:
-        return `${t.base}:${t.id}`;
-    }
-  }
+  //     default:
+  //       return `${t.base}:${t.id}`;
+  //   }
+  // }
 
-  private SerializeType(t: TypeDef): fb.Offset {
+  private SerializeType(t: GoTypeDef): fb.Offset {
     let typeOffset: fb.Offset = 0;
     let typeEnum = program.Type.NONE;
-
+    let base: go.Kind = go.Kind.Nil;
+    let basePtr: boolean;
     switch (t.base) {
-      case Kind.FUNC:
+      case GoKind.FUNC:
         typeOffset = this.CreateFuncType(t);
         typeEnum = program.Type.FunctionType;
         break;
+      case GoKind.ARRAY:
+        break;
+      default:
+        basePtr = true;
+      // case of pointer to TypeDef
+      // search defintions for address
+    }
+
+    if (base === go.Kind.Nil) {
+      base = KindMapper(t.base as GoKind);
     }
 
     program.TypeDef.startTypeDef(this.builder);
-    program.TypeDef.addBase(this.builder, this.HashString(t.base));
+    program.TypeDef.addBase(this.builder, base);
     program.TypeDef.addId(this.builder, this.SetString(t.id));
     program.TypeDef.addTypeType(this.builder, typeEnum);
     program.TypeDef.addType(this.builder, typeOffset);
@@ -1672,20 +1687,17 @@ export class GoBuilder extends IBuilder<go.Opcode, go.NodeFlag, go.ValueFlag> {
     return program.TypeDef.endTypeDef(this.builder);
   }
 
-  public SetType(t: TypeDef): number {
-    const sig = this.TypeSignature(t);
-    const hash = this.HashString(sig);
+  public SetType(t: GoTypeDef): number {
+    // check if type already exists
+    // otherwise, create the type and push it
 
-    if (this.typelut.has(hash)) return hash;
-
-    this.typelut.set(hash, this.SerializeType(t));
-    return hash;
+    return 0;
   }
 
-  private CreateFuncType(t: TypeDef): fb.Offset {
-    if (t.base !== Kind.FUNC) return 0;
+  private CreateFuncType(t: GoTypeDef): fb.Offset {
+    if (t.base !== GoKind.FUNC) return 0;
 
-    const func = t as FunctionType;
+    const func = t as GoFunctionType;
     let impl: fb.Offset = 0;
 
     if (func.impl)

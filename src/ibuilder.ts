@@ -42,26 +42,28 @@ export abstract class IBuilder<
 > {
   protected builder: fb.Builder;
   protected nodes = new Map<NodeId, [INode<TOpcode>, fb.Offset]>();
-  protected stringlut = new Map<number, string>();
-  protected typelut: Map<number, fb.Offset> = new Map();
+  protected stringlut: string[] = [];
+  private nextId: number = 1;
+  protected typelut: fb.Offset[] = [];
 
   constructor(protected builderOptions: BuilderOptions) {
     this.builder = new fb.Builder(builderOptions.size ?? 1024);
+    this.SetString("");
   }
 
   protected abstract buildNode(node: INode<TOpcode>, id: NodeId): fb.Offset;
 
   private CreateStringLUT(): fb.Offset {
     // Convert to array and sort numerically by key
-    const entries = Array.from(this.stringlut).sort(([a], [b]) => a - b);
+    const entries = this.stringlut.sort((a, b) => a.localeCompare(b));
 
     const offsets: fb.Offset[] = [];
 
-    for (const [key, value] of entries) {
-      const valueOffset = this.builder.createString(value);
+    for (let i = 0; i < entries.length; i++) {
+      const valueOffset = this.builder.createString(entries[i]);
 
       program.StringEntry.startStringEntry(this.builder);
-      program.StringEntry.addKey(this.builder, key);
+      program.StringEntry.addKey(this.builder, i);
       program.StringEntry.addValue(this.builder, valueOffset);
 
       offsets.push(program.StringEntry.endStringEntry(this.builder));
@@ -118,8 +120,8 @@ export abstract class IBuilder<
   }
 
   public PrintLUT(): void {
-    for (const [hash, string] of this.stringlut) {
-      console.log(`${hash} -> ${string}`);
+    for (let i = 0; i < this.stringlut.length; i++) {
+      console.log(`${i} -> ${this.stringlut[i]}`);
     }
   }
   /**
@@ -137,11 +139,15 @@ export abstract class IBuilder<
     return hash >>> 0;
   }
 
-  public SetString(s: string): number {
-    const hash = this.HashString(s);
+  protected SetString(s: string): number {
+    const id = this.nextId++ >>> 0;
 
-    this.stringlut.set(hash, s);
-    return hash;
+    if (id > 0xffffffff) {
+      throw new Error("uint32 overflow");
+    }
+
+    this.stringlut[id] = s;
+    return id;
   }
 
   // Export / Rebuild
@@ -223,7 +229,6 @@ export abstract class IBuilder<
   public Clear() {
     this.builder.clear();
     this.nodes.clear();
-    this.stringlut.clear();
-    this.typelut.clear();
+    this.stringlut.length = 0;
   }
 }

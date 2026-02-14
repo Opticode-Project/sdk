@@ -1,7 +1,7 @@
-import { ChanDir } from "./golang";
+import { ChanDir, Kind } from "./golang";
 import { packUnsigned64 } from "./utils";
 
-export enum Kind {
+export enum GoKind {
   INT = "int",
   INT8 = "int8",
   INT16 = "int16",
@@ -34,69 +34,105 @@ export enum Kind {
   INTERFACE = "interface",
 }
 
-export type Type = Kind | string;
+export type GoType = Kind | string;
 
-export interface TypeHeader {
-  base: Type;
+export interface GoTypeHeader {
+  base: GoType;
   id: string;
 }
 
-export type TypeDef =
-  | PointerType
-  | InterfaceType
-  | StructType
-  | FunctionType
-  | MapType
-  | ChanType
-  | ArrayType
-  | TypeHeader;
+export type GoTypeDef =
+  | GoPointerType
+  | GoInterfaceType
+  | GoStructType
+  | GoFunctionType
+  | GoMapType
+  | GoChanType
+  | GoArrayType
+  | GoTypeHeader;
 
-export interface PointerType extends TypeHeader {
-  elem: TypeDef;
+export const KindTable = {
+  int: Kind.Int,
+  int8: Kind.Int8,
+  int16: Kind.Int16,
+  int32: Kind.Int32,
+  int64: Kind.Int64,
+  uint: Kind.Uint,
+  uint8: Kind.Uint8,
+  uint16: Kind.Uint16,
+  uint32: Kind.Uint32,
+  uint64: Kind.Uint64,
+  uintptr: Kind.Uintptr,
+  float32: Kind.Float32,
+  float64: Kind.Float64,
+  complex64: Kind.Complex64,
+  complex128: Kind.Complex128,
+
+  string: Kind.String,
+  rune: Kind.Rune,
+  byte: Kind.Byte,
+
+  boolean: Kind.Boolean,
+
+  pointer: Kind.Pointer,
+  struct: Kind.Struct,
+  func: Kind.Func,
+  array: Kind.Array,
+  slice: Kind.Slice,
+  map: Kind.Map,
+  channel: Kind.Channel,
+  interface: Kind.Interface,
+};
+
+export const KindMapper = (kind: GoKind): Kind | Kind.Nil =>
+  KindTable[kind] || Kind.Nil;
+
+export interface GoPointerType extends GoTypeHeader {
+  elem: GoTypeDef;
 }
 
-export interface InterfaceType extends TypeHeader {
+export interface GoInterfaceType extends GoTypeHeader {
   methods: {
     name: string;
-    func: TypeDef;
+    func: GoTypeDef;
   }[];
 }
 
-export interface StructType extends TypeHeader {
+export interface GoStructType extends GoTypeHeader {
   fields: {
     name: string;
-    type: TypeDef;
+    type: GoTypeDef;
     tag?: string;
   }[];
 }
 
-export interface FunctionType extends TypeHeader {
-  params: [string, TypeDef][];
-  results: [string, TypeDef][];
-  impl?: [string, TypeDef];
-  typeSig?: TypeDef;
+export interface GoFunctionType extends GoTypeHeader {
+  params: [string, GoTypeDef][];
+  results: [string, GoTypeDef][];
+  impl?: [string, GoTypeDef];
+  typeSig?: GoTypeDef;
 }
 
-export interface MapType extends TypeHeader {
-  key: TypeDef;
-  value: TypeDef;
+export interface GoMapType extends GoTypeHeader {
+  key: GoTypeDef;
+  value: GoTypeDef;
 }
 
-export interface ChanType extends TypeHeader {
-  elem: TypeDef;
+export interface GoChanType extends GoTypeHeader {
+  elem: GoTypeDef;
   dir: ChanDir;
 }
 
-export interface ArrayType extends TypeHeader {
-  elem: TypeDef;
+export interface GoArrayType extends GoTypeHeader {
+  elem: GoTypeDef;
   size: bigint; // For multi dimensional arrays, integer is split
 }
 
-export class Struct {
+export class GoStruct {
   private name: string = "UnnamedStruct";
   private fields: {
     name: string;
-    type: TypeDef;
+    type: GoTypeDef;
     tag?: string;
     value?: string;
   }[] = [];
@@ -124,7 +160,7 @@ export class Struct {
    */
   public Field(
     name: string,
-    type: TypeDef,
+    type: GoTypeDef,
     tag?: string,
     value?: string,
   ): this {
@@ -143,9 +179,9 @@ export class Struct {
   /**
    * @remarks Exports the struct as a type definition
    */
-  public AsDefinition(): StructType {
+  public AsDefinition(): GoStructType {
     return {
-      base: Kind.STRUCT,
+      base: GoKind.STRUCT,
       id: this.name,
       fields: this.fields.map((f) => {
         return {
@@ -158,9 +194,9 @@ export class Struct {
   }
 }
 
-export class Interface {
+export class GoInterface {
   private name = "UnnamedInterface";
-  private methods: [string, TypeDef][] = [];
+  private methods: [string, GoTypeDef][] = [];
 
   constructor() {
     return;
@@ -179,8 +215,8 @@ export class Interface {
    * @param name name of method
    * @param def function defintion
    */
-  public Method(name: string, def: TypeDef): this {
-    if (def.base !== Kind.FUNC)
+  public Method(name: string, def: GoTypeDef): this {
+    if (def.base !== GoKind.FUNC)
       throw new Error("Type definition must be of type func!");
     this.methods.push([name, def]);
     return this;
@@ -189,9 +225,9 @@ export class Interface {
   /**
    * @remarks Exports the interface as a type definition
    */
-  public AsDefinition(): InterfaceType {
+  public AsDefinition(): GoInterfaceType {
     return {
-      base: Kind.INTERFACE,
+      base: GoKind.INTERFACE,
       id: this.name,
       methods: this.methods.map((v) => {
         return {
@@ -203,78 +239,78 @@ export class Interface {
   }
 }
 
-export function Uint(name: string, bitSize: 8 | 16 | 32 | 64): TypeDef {
+export function GoUint(name: string, bitSize: 8 | 16 | 32 | 64): GoTypeDef {
   return {
-    base: Kind.UINT + bitSize.toString(),
+    base: GoKind.UINT + bitSize.toString(),
     id: name,
   };
 }
 
-export function Uintptr(name: string): TypeDef {
+export function GoUintptr(name: string): GoTypeDef {
   return {
-    base: Kind.UINTPTR,
+    base: GoKind.UINTPTR,
     id: name,
   };
 }
 
-export function Float(name: string, bitSize: 32 | 64): TypeDef {
+export function GoFloat(name: string, bitSize: 32 | 64): GoTypeDef {
   return {
     base: "float" + bitSize.toString(),
     id: name,
   };
 }
 
-export function Int(name: string, bitSize: 8 | 16 | 32 | 64): TypeDef {
+export function GoInt(name: string, bitSize: 8 | 16 | 32 | 64): GoTypeDef {
   return {
-    base: Kind.INT + bitSize.toString(),
+    base: GoKind.INT + bitSize.toString(),
     id: name,
   };
 }
 
-export function Complex(name: string, bitSize: 64 | 128): TypeDef {
+export function GoComplex(name: string, bitSize: 64 | 128): GoTypeDef {
   return {
     base: "complex" + bitSize.toString(),
     id: name,
   };
 }
 
-export function String(name?: string): TypeDef {
+export function GoString(name?: string): GoTypeDef {
   return {
-    base: Kind.STRING,
+    base: GoKind.STRING,
     id: name || "",
   };
 }
 
-export function Rune(name: string): TypeDef {
+export function GoRune(name: string): GoTypeDef {
   return {
-    base: Kind.RUNE,
+    base: GoKind.RUNE,
     id: name,
   };
 }
 
-export function Byte(name: string): TypeDef {
+export function GoByte(name: string): GoTypeDef {
   return {
-    base: Kind.BYTE,
+    base: GoKind.BYTE,
     id: name,
   };
 }
 
-export function Boolean(name: string): TypeDef {
+export function GoBoolean(name: string): GoTypeDef {
   return {
-    base: Kind.BOOLEAN,
+    base: GoKind.BOOLEAN,
     id: name,
   };
 }
 
-export function Func(
+export function GoFunc(
   name: string,
-  results: [string, TypeDef][],
-  params: [string, TypeDef][],
-  impl?: [string, TypeDef],
-  typeSig?: TypeDef,
-): FunctionType {
+  results: [string, GoTypeDef][],
+  params: [string, GoTypeDef][],
+  impl?: [string, GoTypeDef],
+  typeSig?: GoTypeDef,
+): GoFunctionType {
   return {
-    base: Kind.FUNC,
+    base: GoKind.FUNC,
     id: name,
     impl,
     typeSig,
@@ -283,29 +319,29 @@ export function Func(
   };
 }
 
-export function Ptr(def: TypeDef): PointerType {
+export function GoPtr(def: GoTypeDef): GoPointerType {
   return {
-    base: Kind.POINTER,
+    base: GoKind.POINTER,
     id: def.id,
     elem: def,
   };
 }
 
-export function Chan(
-  def: TypeDef,
+export function GoChan(
+  def: GoTypeDef,
   dir: ChanDir = ChanDir.Bidirectional,
-): ChanType {
+): GoChanType {
   return {
-    base: Kind.CHANNEL,
+    base: GoKind.CHANNEL,
     id: def.id,
     elem: def,
     dir,
   };
 }
 
-export function Array(def: TypeDef, size: number[]): ArrayType {
-  let base: Kind = Kind.ARRAY;
-  if (!size) base = Kind.SLICE;
+export function GoArray(def: GoTypeDef, size: number[]): GoArrayType {
+  let base: GoKind = GoKind.ARRAY;
+  if (!size) base = GoKind.SLICE;
 
   return {
     base,
@@ -315,9 +351,13 @@ export function Array(def: TypeDef, size: number[]): ArrayType {
   };
 }
 
-export function Map(name: string, key: TypeDef, value: TypeDef): MapType {
+export function GoMap(
+  name: string,
+  key: GoTypeDef,
+  value: GoTypeDef,
+): GoMapType {
   return {
-    base: Kind.MAP,
+    base: GoKind.MAP,
     id: name,
     key: key,
     value: value,

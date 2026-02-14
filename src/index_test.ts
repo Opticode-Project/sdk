@@ -1,20 +1,20 @@
 import { GoBuilder, GoBuilderOptions, FuncImpl } from "./go/builder";
 import { NodeId } from "./ibuilder";
 import {
-  Func,
-  PointerType,
-  Kind,
-  Struct,
-  Interface,
-  TypeDef,
-  Type,
-  String,
-  Array,
-  ArrayType,
-  StructType,
-  FunctionType,
-  InterfaceType,
-  Int,
+  GoFunc,
+  GoPointerType,
+  GoKind,
+  GoStruct,
+  GoInterface,
+  GoTypeDef,
+  GoType,
+  GoString,
+  GoArray,
+  GoArrayType,
+  GoStructType,
+  GoFunctionType,
+  GoInterfaceType,
+  GoInt,
 } from "./go/types";
 
 const options: GoBuilderOptions = {
@@ -42,7 +42,7 @@ for (let i = 0; i < 1; i++) {
     ["Farewell", "Goodbye, World!"],
   ].map((v) => {
     return builder.SetNode(
-      builder.CreateConstValueNode(v[0], Int("Test", 32), v[1]),
+      builder.CreateConstValueNode(v[0], GoInt("Test", 32), v[1]),
     );
   });
 
@@ -56,7 +56,7 @@ for (let i = 0; i < 1; i++) {
     ["Farewell", "Goodbye, World!"],
   ].map((v) => {
     return builder.SetNode(
-      builder.CreateVarValueNode(v[0], Int("Test", 32), v[1]),
+      builder.CreateVarValueNode(v[0], GoInt("Test", 32), v[1]),
     );
   });
 
@@ -75,12 +75,12 @@ for (let i = 0; i < 1; i++) {
   const IfId = builder.SetNode(IfNode);
 
   builder.ConnectNodes(varId, IfId);
-  const mainFuncType = Func("main", [], []);
+  const mainFuncType = GoFunc("main", [], []);
 
   let body: NodeId[] = [];
   for (let i = 0; i < 5; i++) {
     const varValue = builder.SetNode(
-      builder.CreateVarValueNode("N" + i, Int("Test", 32), i.toString()),
+      builder.CreateVarValueNode("N" + i, GoInt("Test", 32), i.toString()),
     );
 
     const varId = builder.SetNode(builder.CreateVarNode(varValue));
@@ -92,7 +92,7 @@ for (let i = 0; i < 1; i++) {
 
   const paramNode = builder.CreateConstValueNode(
     "meow",
-    String("Test"),
+    GoString("Test"),
     "something",
   );
 
