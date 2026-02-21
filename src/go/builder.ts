@@ -1689,9 +1689,21 @@ export class GoBuilder extends IBuilder<go.Opcode, go.NodeFlag, go.ValueFlag> {
 
   public SetType(t: GoTypeDef): number {
     // check if type already exists
-    // otherwise, create the type and push it
+    let uid = this.typelut.findIndex((v) => v.id === t.id)
+    if (uid >= 0) return uid
 
-    return 0;
+    // otherwise, create the type and push it
+    const addr = this.SerializeType(t)
+    
+    uid = this.nextTypeId++ >>> 0;
+    if (uid > 0xfffffffe) throw new Error("uint32 overflow");
+    
+    this.typelut[uid] = {
+      id: t.id,
+      addr,
+    }
+    
+    return addr;
   }
 
   private CreateFuncType(t: GoTypeDef): fb.Offset {
