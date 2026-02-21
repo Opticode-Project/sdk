@@ -5,6 +5,7 @@ import {
   GoArrayType,
   GoFunctionType,
   GoKind,
+  GoMapType,
   GoType,
   GoTypeDef,
   KindMapper,
@@ -1678,6 +1679,9 @@ export class GoBuilder extends IBuilder<go.Opcode, go.NodeFlag, go.ValueFlag> {
         typeOffset = this.CreateArrayType(t);
         typeEnum = program.Type.ArrayType;
         break;
+      case GoKind.MAP:
+        typeOffset = this.CreateMapType(t);
+        typeEnum = program.Type.MapType;
       default:
         basePtr = true;
       // case of pointer to TypeDef
@@ -1717,7 +1721,7 @@ export class GoBuilder extends IBuilder<go.Opcode, go.NodeFlag, go.ValueFlag> {
   }
 
   private CreateFuncType(t: GoTypeDef): fb.Offset {
-    // Useless check
+    // Redundant check
     //if (t.base !== GoKind.FUNC) return 0;
 
     const func = t as GoFunctionType;
@@ -1775,7 +1779,7 @@ export class GoBuilder extends IBuilder<go.Opcode, go.NodeFlag, go.ValueFlag> {
   }
 
   private CreateArrayType(t: GoTypeDef): fb.Offset {
-    // Useless check
+    // Redundant check
     //if (t.base !== GoKind.ARRAY || t.base !== GoKind.SLICE) return -1
     const arr = t as GoArrayType;
 
@@ -1788,6 +1792,18 @@ export class GoBuilder extends IBuilder<go.Opcode, go.NodeFlag, go.ValueFlag> {
     program.ArrayType.addElem(this.builder, elem);
     const arrayType = program.ArrayType.endArrayType(this.builder);
     return arrayType;
+  }
+
+  private CreateMapType(t: GoTypeDef): fb.Offset {
+    // Redundant check
+    //if (t.base !== GoKind.MAP) return -1
+    const map = t as GoMapType;
+
+    const key = this.SetType(map.key);
+    const value = this.SetType(map.value);
+
+    const mapType = program.MapType.createMapType(this.builder, key, value);
+    return mapType;
   }
 
   private buildNodeValue(v: GoNodeValue): fb.Offset {
