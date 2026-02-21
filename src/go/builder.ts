@@ -6,6 +6,8 @@ import {
   GoFunctionType,
   GoKind,
   GoMapType,
+  GoStruct,
+  GoStructType,
   GoType,
   GoTypeDef,
   KindMapper,
@@ -1682,6 +1684,12 @@ export class GoBuilder extends IBuilder<go.Opcode, go.NodeFlag, go.ValueFlag> {
       case GoKind.MAP:
         typeOffset = this.CreateMapType(t);
         typeEnum = program.Type.MapType;
+      case GoKind.INTERFACE:
+        break;
+      case GoKind.STRUCT:
+        typeOffset = this.CreateStructType(t);
+        typeEnum = program.Type.StructureType;
+        break;
       default:
         basePtr = true;
       // case of pointer to TypeDef
@@ -1806,6 +1814,34 @@ export class GoBuilder extends IBuilder<go.Opcode, go.NodeFlag, go.ValueFlag> {
     return mapType;
   }
 
+  private CreateStructType(t: GoTypeDef): fb.Offset {
+    // Redundant check
+    //if (t.base !== GoKind.STRUCT) return -1
+
+    const struct = t as GoStructType;
+    const fields: fb.Offset[] = [];
+    for (const field of struct.fields) {
+      const name = this.SetString(field.name);
+      const type = this.SetType(field.type);
+
+      program.StructureField.startStructureField(this.builder);
+      program.StructureField.addName(this.builder, name);
+      program.StructureField.addType(this.builder, type);
+      if (field.tag)
+        program.StructureField.addMisc(this.builder, this.SetString(field.tag));
+      fields.push(program.StructureField.endStructureField(this.builder));
+    }
+
+    const fieldsOffset = program.StructureType.createFieldsVector(
+      this.builder,
+      fields,
+    );
+
+    program.StructureType.startStructureType(this.builder);
+    program.StructureType.addFields(this.builder, fieldsOffset);
+    const structType = program.StructureType.endStructureType(this.builder);
+    return structType;
+  }
   private buildNodeValue(v: GoNodeValue): fb.Offset {
     let typeHash: number | undefined;
     if (v.type !== undefined) {
