@@ -7,6 +7,7 @@ import {
   GoInterfaceType,
   GoKind,
   GoMapType,
+  GoPointerType,
   GoStruct,
   GoStructType,
   GoType,
@@ -1674,24 +1675,28 @@ export class GoBuilder extends IBuilder<go.Opcode, go.NodeFlag, go.ValueFlag> {
     let basePtr: boolean;
     switch (t.base) {
       case GoKind.FUNC:
-        typeOffset = this.CreateFuncType(t);
+        typeOffset = this.CreateFuncType(t as GoFunctionType);
         typeEnum = program.Type.FunctionType;
         break;
       case GoKind.SLICE:
       case GoKind.ARRAY:
-        typeOffset = this.CreateArrayType(t);
+        typeOffset = this.CreateArrayType(t as GoArrayType);
         typeEnum = program.Type.ArrayType;
         break;
       case GoKind.MAP:
-        typeOffset = this.CreateMapType(t);
+        typeOffset = this.CreateMapType(t as GoMapType);
         typeEnum = program.Type.MapType;
       case GoKind.INTERFACE:
-        typeOffset = this.CreateInterfaceType(t);
+        typeOffset = this.CreateInterfaceType(t as GoInterfaceType);
         typeEnum = program.Type.StructureType;
         break;
       case GoKind.STRUCT:
-        typeOffset = this.CreateStructType(t);
+        typeOffset = this.CreateStructType(t as GoStructType);
         typeEnum = program.Type.StructureType;
+        break;
+      case GoKind.POINTER:
+        typeOffset = this.CreatePointerType(t as GoPointerType);
+        typeEnum = program.Type.PointerType;
         break;
       default:
         basePtr = true;
@@ -1731,11 +1736,7 @@ export class GoBuilder extends IBuilder<go.Opcode, go.NodeFlag, go.ValueFlag> {
     return addr;
   }
 
-  private CreateFuncType(t: GoTypeDef): fb.Offset {
-    // Redundant check
-    //if (t.base !== GoKind.FUNC) return 0;
-
-    const func = t as GoFunctionType;
+  private CreateFuncType(func: GoFunctionType): fb.Offset {
     let impl: fb.Offset = 0;
 
     if (func.impl)
@@ -1789,11 +1790,7 @@ export class GoBuilder extends IBuilder<go.Opcode, go.NodeFlag, go.ValueFlag> {
     return funcType;
   }
 
-  private CreateArrayType(t: GoTypeDef): fb.Offset {
-    // Redundant check
-    //if (t.base !== GoKind.ARRAY || t.base !== GoKind.SLICE) return -1
-    const arr = t as GoArrayType;
-
+  private CreateArrayType(arr: GoArrayType): fb.Offset {
     const size = packIntArrayToBigInt(arr.size, 64 / arr.size.length);
 
     const elem = this.SetType(arr.elem);
@@ -1805,11 +1802,7 @@ export class GoBuilder extends IBuilder<go.Opcode, go.NodeFlag, go.ValueFlag> {
     return arrayType;
   }
 
-  private CreateMapType(t: GoTypeDef): fb.Offset {
-    // Redundant check
-    //if (t.base !== GoKind.MAP) return -1
-    const map = t as GoMapType;
-
+  private CreateMapType(map: GoMapType): fb.Offset {
     const key = this.SetType(map.key);
     const value = this.SetType(map.value);
 
@@ -1817,19 +1810,15 @@ export class GoBuilder extends IBuilder<go.Opcode, go.NodeFlag, go.ValueFlag> {
     return mapType;
   }
 
-  private CreateStructType(t: GoTypeDef): fb.Offset {
-    // Redundant check
-    //if (t.base !== GoKind.STRUCT) return -1
-
-    const struct = t as GoStructType;
+  private CreateStructType(struct: GoStructType): fb.Offset {
     const fields: fb.Offset[] = [];
     for (const field of struct.fields) {
       const name = this.SetString(field.name);
-      const type = this.SetType(field.type);
+      const _type = this.SetType(field.type);
 
       program.StructureField.startStructureField(this.builder);
       program.StructureField.addName(this.builder, name);
-      program.StructureField.addType(this.builder, type);
+      program.StructureField.addType(this.builder, _type);
       if (field.tag)
         program.StructureField.addMisc(this.builder, this.SetString(field.tag));
       fields.push(program.StructureField.endStructureField(this.builder));
@@ -1846,15 +1835,11 @@ export class GoBuilder extends IBuilder<go.Opcode, go.NodeFlag, go.ValueFlag> {
     return structType;
   }
 
-  private CreateInterfaceType(t: GoTypeDef): fb.Offset {
-    // Redundant check
-    //if (t.base !== GoKind.INTERFACE) return -1
-
-    const _interface = t as GoInterfaceType;
+  private CreateInterfaceType(_interface: GoInterfaceType): fb.Offset {
     const methods: number[] = [];
     for (const method of _interface.methods) {
-      const type = this.SetType(method);
-      methods.push(type);
+      const _type = this.SetType(method);
+      methods.push(_type);
     }
 
     const methodsOffset = program.StructureType.createDefsVector(
@@ -1866,6 +1851,11 @@ export class GoBuilder extends IBuilder<go.Opcode, go.NodeFlag, go.ValueFlag> {
     program.StructureType.addDefs(this.builder, methodsOffset);
     const interfaceType = program.StructureType.endStructureType(this.builder);
     return interfaceType;
+  }
+
+  private CreatePointerType(ptr: GoPointerType): fb.Offset {
+    const _type = this.SetType(ptr.elem);
+    return program.PointerType.createPointerType(this.builder, _type);
   }
 
   private buildNodeValue(v: GoNodeValue): fb.Offset {
