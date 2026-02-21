@@ -1647,32 +1647,12 @@ export class GoBuilder extends IBuilder<go.Opcode, go.NodeFlag, go.ValueFlag> {
     );
   }
 
-  // private TypeSignature(t: TypeDef): string {
-  //   switch (t.base) {
-  //     case Kind.FUNC: {
-  //       const f = t as FunctionType;
-
-  //       const params = f.params
-  //         .map(([name, ty]) => `${name}:${this.TypeSignature(ty)}`)
-  //         .join(",");
-
-  //       const results = f.results
-  //         .map(([name, ty]) => `${name}:${this.TypeSignature(ty)}`)
-  //         .join(",");
-
-  //       return `func(${params})->(${results})`;
-  //     }
-
-  //     default:
-  //       return `${t.base}:${t.id}`;
-  //   }
-  // }
-
   private SerializeType(t: GoTypeDef): fb.Offset {
     let typeOffset: fb.Offset = 0;
     let typeEnum = program.Type.NONE;
     let base: go.Kind = go.Kind.Nil;
-    let basePtr: boolean;
+    let basePtr: boolean = false;
+    let flags: number = 0;
     switch (t.base) {
       case GoKind.FUNC:
         typeOffset = this.CreateFuncType(t as GoFunctionType);
@@ -1698,13 +1678,38 @@ export class GoBuilder extends IBuilder<go.Opcode, go.NodeFlag, go.ValueFlag> {
         typeOffset = this.CreatePointerType(t as GoPointerType);
         typeEnum = program.Type.PointerType;
         break;
+      case GoKind.BOOLEAN:
+      case GoKind.CHANNEL:
+      case GoKind.BYTE:
+      case GoKind.COMPLEX128:
+      case GoKind.COMPLEX64:
+      case GoKind.FLOAT32:
+      case GoKind.FLOAT64:
+      case GoKind.INT:
+      case GoKind.INT16:
+      case GoKind.INT32:
+      case GoKind.INT64:
+      case GoKind.INT8:
+      case GoKind.RUNE:
+      case GoKind.STRING:
+      case GoKind.UINT:
+      case GoKind.UINT16:
+      case GoKind.UINT32:
+      case GoKind.UINT64:
+      case GoKind.UINT8:
+      case GoKind.UINTPTR:
+        break;
       default:
         basePtr = true;
-      // case of pointer to TypeDef
-      // search defintions for address
+        const baseResult = this.typelut.findIndex((v) => v.id == t.base);
+        if (baseResult == -1)
+          throw Error(
+            `type ${t.id} requires a valid base type. Type must be set before inheritance.`,
+          );
+        base = baseResult;
     }
 
-    if (base === go.Kind.Nil) {
+    if (!basePtr) {
       base = KindMapper(t.base as GoKind);
     }
 
@@ -1713,6 +1718,7 @@ export class GoBuilder extends IBuilder<go.Opcode, go.NodeFlag, go.ValueFlag> {
     program.TypeDef.addId(this.builder, this.SetString(t.id));
     program.TypeDef.addTypeType(this.builder, typeEnum);
     program.TypeDef.addType(this.builder, typeOffset);
+    program.TypeDef.addFlags(this.builder, flags);
 
     return program.TypeDef.endTypeDef(this.builder);
   }
