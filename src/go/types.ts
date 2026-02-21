@@ -1,5 +1,4 @@
 import { ChanDir, Kind } from "./golang";
-import { packUnsigned64 } from "./utils";
 
 export enum GoKind {
   INT = "int",
@@ -125,7 +124,7 @@ export interface GoChanType extends GoTypeHeader {
 
 export interface GoArrayType extends GoTypeHeader {
   elem: GoTypeDef;
-  size: bigint; // For multi dimensional arrays, integer is split
+  size: number[]; // For multi dimensional arrays, integer is split
 }
 
 export class GoStruct {
@@ -347,7 +346,7 @@ export function GoArray(def: GoTypeDef, size: number[]): GoArrayType {
     base,
     id: def.id,
     elem: def,
-    size: packUnsigned64(size),
+    size: size,
   };
 }
 

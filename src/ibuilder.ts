@@ -86,10 +86,10 @@ export abstract class IBuilder<
 
     const offsets: fb.Offset[] = [];
 
-    for (const [key, typeOffset] of entries) {
+    for (const [key, typeEntry] of entries) {
       program.TypeEntry.startTypeEntry(this.builder);
       program.TypeEntry.addKey(this.builder, key);
-      program.TypeEntry.addValue(this.builder, typeOffset);
+      program.TypeEntry.addValue(this.builder, typeEntry.addr);
 
       offsets.push(program.TypeEntry.endTypeEntry(this.builder));
     }

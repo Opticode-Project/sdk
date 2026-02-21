@@ -1,7 +1,14 @@
 import * as fb from "flatbuffers";
 import * as go from "./golang";
 import * as program from "../program";
-import { GoFunctionType, GoKind, GoType, GoTypeDef, KindMapper } from "./types";
+import {
+  GoArrayType,
+  GoFunctionType,
+  GoKind,
+  GoType,
+  GoTypeDef,
+  KindMapper,
+} from "./types";
 import {
   NodeId,
   INode,
@@ -1666,7 +1673,10 @@ export class GoBuilder extends IBuilder<go.Opcode, go.NodeFlag, go.ValueFlag> {
         typeOffset = this.CreateFuncType(t);
         typeEnum = program.Type.FunctionType;
         break;
+      case GoKind.SLICE:
       case GoKind.ARRAY:
+        typeOffset = this.CreateArrayType(t);
+        typeEnum = program.Type.ArrayType;
         break;
       default:
         basePtr = true;
@@ -1689,25 +1699,26 @@ export class GoBuilder extends IBuilder<go.Opcode, go.NodeFlag, go.ValueFlag> {
 
   public SetType(t: GoTypeDef): number {
     // check if type already exists
-    let uid = this.typelut.findIndex((v) => v.id === t.id)
-    if (uid >= 0) return uid
+    let uid = this.typelut.findIndex((v) => v.id === t.id);
+    if (uid >= 0) return uid;
 
     // otherwise, create the type and push it
-    const addr = this.SerializeType(t)
-    
+    const addr = this.SerializeType(t);
+
     uid = this.nextTypeId++ >>> 0;
     if (uid > 0xfffffffe) throw new Error("uint32 overflow");
-    
+
     this.typelut[uid] = {
       id: t.id,
       addr,
-    }
-    
+    };
+
     return addr;
   }
 
   private CreateFuncType(t: GoTypeDef): fb.Offset {
-    if (t.base !== GoKind.FUNC) return 0;
+    // Useless check
+    //if (t.base !== GoKind.FUNC) return 0;
 
     const func = t as GoFunctionType;
     let impl: fb.Offset = 0;
@@ -1761,6 +1772,22 @@ export class GoBuilder extends IBuilder<go.Opcode, go.NodeFlag, go.ValueFlag> {
 
     const funcType = program.FunctionType.endFunctionType(this.builder);
     return funcType;
+  }
+
+  private CreateArrayType(t: GoTypeDef): fb.Offset {
+    // Useless check
+    //if (t.base !== GoKind.ARRAY || t.base !== GoKind.SLICE) return -1
+    const arr = t as GoArrayType;
+
+    const size = packIntArrayToBigInt(arr.size, 64 / arr.size.length);
+
+    const elem = this.SetType(arr.elem);
+
+    program.ArrayType.startArrayType(this.builder);
+    program.ArrayType.addSize(this.builder, size);
+    program.ArrayType.addElem(this.builder, elem);
+    const arrayType = program.ArrayType.endArrayType(this.builder);
+    return arrayType;
   }
 
   private buildNodeValue(v: GoNodeValue): fb.Offset {
