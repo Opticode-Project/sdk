@@ -4,6 +4,7 @@ import * as program from "../program";
 import {
   GoArrayType,
   GoFunctionType,
+  GoInterfaceType,
   GoKind,
   GoMapType,
   GoStruct,
@@ -1685,6 +1686,8 @@ export class GoBuilder extends IBuilder<go.Opcode, go.NodeFlag, go.ValueFlag> {
         typeOffset = this.CreateMapType(t);
         typeEnum = program.Type.MapType;
       case GoKind.INTERFACE:
+        typeOffset = this.CreateInterfaceType(t);
+        typeEnum = program.Type.StructureType;
         break;
       case GoKind.STRUCT:
         typeOffset = this.CreateStructType(t);
@@ -1842,6 +1845,29 @@ export class GoBuilder extends IBuilder<go.Opcode, go.NodeFlag, go.ValueFlag> {
     const structType = program.StructureType.endStructureType(this.builder);
     return structType;
   }
+
+  private CreateInterfaceType(t: GoTypeDef): fb.Offset {
+    // Redundant check
+    //if (t.base !== GoKind.INTERFACE) return -1
+
+    const _interface = t as GoInterfaceType;
+    const methods: number[] = [];
+    for (const method of _interface.methods) {
+      const type = this.SetType(method);
+      methods.push(type);
+    }
+
+    const methodsOffset = program.StructureType.createDefsVector(
+      this.builder,
+      methods,
+    );
+
+    program.StructureType.startStructureType(this.builder);
+    program.StructureType.addDefs(this.builder, methodsOffset);
+    const interfaceType = program.StructureType.endStructureType(this.builder);
+    return interfaceType;
+  }
+
   private buildNodeValue(v: GoNodeValue): fb.Offset {
     let typeHash: number | undefined;
     if (v.type !== undefined) {

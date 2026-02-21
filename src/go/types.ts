@@ -91,10 +91,7 @@ export interface GoPointerType extends GoTypeHeader {
 }
 
 export interface GoInterfaceType extends GoTypeHeader {
-  methods: {
-    name: string;
-    func: GoTypeDef;
-  }[];
+  methods: GoFunctionType[];
 }
 
 export interface GoStructType extends GoTypeHeader {
@@ -195,7 +192,7 @@ export class GoStruct {
 
 export class GoInterface {
   private name = "UnnamedInterface";
-  private methods: [string, GoTypeDef][] = [];
+  private methods: GoFunctionType[] = [];
 
   constructor() {
     return;
@@ -214,10 +211,10 @@ export class GoInterface {
    * @param name name of method
    * @param def function defintion
    */
-  public Method(name: string, def: GoTypeDef): this {
-    if (def.base !== GoKind.FUNC)
+  public Method(func: GoFunctionType): this {
+    if (func.base !== GoKind.FUNC)
       throw new Error("Type definition must be of type func!");
-    this.methods.push([name, def]);
+    this.methods.push(func);
     return this;
   }
 
@@ -228,12 +225,7 @@ export class GoInterface {
     return {
       base: GoKind.INTERFACE,
       id: this.name,
-      methods: this.methods.map((v) => {
-        return {
-          name: v[0],
-          func: v[1],
-        };
-      }),
+      methods: this.methods,
     };
   }
 }
