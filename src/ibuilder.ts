@@ -79,9 +79,12 @@ export abstract class IBuilder<
     const offsets: fb.Offset[] = [];
 
     for (let i = 0; i < this.typelut.length; i++) {
+      const entry = this.typelut[i];
+      if (!entry) continue;
+      
       program.TypeEntry.startTypeEntry(this.builder);
       program.TypeEntry.addKey(this.builder, i);
-      program.TypeEntry.addValue(this.builder, this.typelut[i].addr);
+      program.TypeEntry.addValue(this.builder, entry.addr);
 
       offsets.push(program.TypeEntry.endTypeEntry(this.builder));
     }

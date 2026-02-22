@@ -14,7 +14,7 @@
  * @returns A BigInt representing the packed array.
  * @throws Error if `bitsPerElement` is invalid or an integer in `intArray` exceeds its allowed bit-width.
  */
-function packIntArrayToBigInt(
+export function packIntArrayToBigInt(
   intArray: number[],
   bitsPerElement: number,
 ): bigint {
@@ -63,7 +63,7 @@ function packIntArrayToBigInt(
  * @throws Error if `bitsPerElement` is invalid or if a value extracted exceeds
  *         the safe integer limit for JavaScript numbers (2^53 - 1).
  */
-function unpackBigIntToIntArray(
+export function unpackBigIntToIntArray(
   packedBigInt: bigint,
   originalArrayLength: number,
   bitsPerElement: number,

@@ -21,6 +21,7 @@ import {
   IBuilder,
   BuilderOptions,
 } from "../ibuilder";
+import { packIntArrayToBigInt } from "./utils";
 
 export interface GoBuilderOptions extends BuilderOptions {}
 
@@ -46,7 +47,9 @@ export class GoBuilder extends IBuilder<go.Opcode, go.NodeFlag, go.ValueFlag> {
   constructor(private options: GoBuilderOptions) {
     super(options);
 
-    this.SetString("");
+    for (let kind of Object.values(GoKind)) {
+      this.SetString(kind);
+    };
   }
 
   protected buildNode(node: Node, id: NodeId): fb.Offset {
@@ -1727,6 +1730,7 @@ export class GoBuilder extends IBuilder<go.Opcode, go.NodeFlag, go.ValueFlag> {
       case GoKind.MAP:
         typeOffset = this.CreateMapType(t as GoMapType);
         typeEnum = program.Type.MapType;
+        break;
       case GoKind.INTERFACE:
         typeOffset = this.CreateInterfaceType(t as GoInterfaceType);
         typeEnum = program.Type.StructureType;
@@ -1786,7 +1790,7 @@ export class GoBuilder extends IBuilder<go.Opcode, go.NodeFlag, go.ValueFlag> {
 
   public SetType(t: GoTypeDef): number {
     // check if type already exists
-    let uid = this.typelut.findIndex((v) => v.id === t.id);
+    let uid = this.typelut.findIndex((v) => v && v.id === t.id);
     if (uid >= 0) return uid;
 
     // otherwise, create the type and push it
@@ -1800,7 +1804,7 @@ export class GoBuilder extends IBuilder<go.Opcode, go.NodeFlag, go.ValueFlag> {
       addr,
     };
 
-    return addr;
+    return uid;
   }
 
   private CreateFuncType(func: GoFunctionType): fb.Offset {
