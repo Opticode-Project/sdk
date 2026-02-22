@@ -1,5 +1,4 @@
 import { ChanDir, Kind } from "./golang";
-import { packUnsigned64 } from "./utils";
 
 export enum GoKind {
   INT = "int",
@@ -92,10 +91,7 @@ export interface GoPointerType extends GoTypeHeader {
 }
 
 export interface GoInterfaceType extends GoTypeHeader {
-  methods: {
-    name: string;
-    func: GoTypeDef;
-  }[];
+  methods: GoFunctionType[];
 }
 
 export interface GoStructType extends GoTypeHeader {
@@ -125,7 +121,7 @@ export interface GoChanType extends GoTypeHeader {
 
 export interface GoArrayType extends GoTypeHeader {
   elem: GoTypeDef;
-  size: bigint; // For multi dimensional arrays, integer is split
+  size: number[]; // For multi dimensional arrays, integer is split
 }
 
 export class GoStruct {
@@ -196,7 +192,7 @@ export class GoStruct {
 
 export class GoInterface {
   private name = "UnnamedInterface";
-  private methods: [string, GoTypeDef][] = [];
+  private methods: GoFunctionType[] = [];
 
   constructor() {
     return;
@@ -215,10 +211,10 @@ export class GoInterface {
    * @param name name of method
    * @param def function defintion
    */
-  public Method(name: string, def: GoTypeDef): this {
-    if (def.base !== GoKind.FUNC)
+  public Method(func: GoFunctionType): this {
+    if (func.base !== GoKind.FUNC)
       throw new Error("Type definition must be of type func!");
-    this.methods.push([name, def]);
+    this.methods.push(func);
     return this;
   }
 
@@ -229,12 +225,7 @@ export class GoInterface {
     return {
       base: GoKind.INTERFACE,
       id: this.name,
-      methods: this.methods.map((v) => {
-        return {
-          name: v[0],
-          func: v[1],
-        };
-      }),
+      methods: this.methods,
     };
   }
 }
@@ -347,7 +338,7 @@ export function GoArray(def: GoTypeDef, size: number[]): GoArrayType {
     base,
     id: def.id,
     elem: def,
-    size: packUnsigned64(size),
+    size: size,
   };
 }
 

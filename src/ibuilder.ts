@@ -35,6 +35,11 @@ export interface INode<
   value?: TNodeValue;
 }
 
+interface TypeEntry {
+  id: string;
+  addr: fb.Offset;
+}
+
 export abstract class IBuilder<
   TOpcode extends number,
   TNodeFlag extends number,
@@ -43,8 +48,9 @@ export abstract class IBuilder<
   protected builder: fb.Builder;
   protected nodes = new Map<NodeId, [INode<TOpcode>, fb.Offset]>();
   protected stringlut: string[] = [];
-  private nextId: number = 1;
-  protected typelut: fb.Offset[] = [];
+  private nextStringId: number = 1;
+  protected nextTypeId: number = 1;
+  protected typelut: TypeEntry[] = [];
 
   constructor(protected builderOptions: BuilderOptions) {
     this.builder = new fb.Builder(builderOptions.size ?? 1024);
@@ -75,7 +81,7 @@ export abstract class IBuilder<
     for (let i = 0; i < this.typelut.length; i++) {
       program.TypeEntry.startTypeEntry(this.builder);
       program.TypeEntry.addKey(this.builder, i);
-      program.TypeEntry.addValue(this.builder, this.typelut[i]);
+      program.TypeEntry.addValue(this.builder, this.typelut[i].addr);
 
       offsets.push(program.TypeEntry.endTypeEntry(this.builder));
     }
@@ -132,9 +138,9 @@ export abstract class IBuilder<
   }
 
   protected SetString(s: string): number {
-    const id = this.nextId++ >>> 0;
+    const id = this.nextStringId++ >>> 0;
 
-    if (id > 0xffffffff) {
+    if (id > 0xfffffffe) {
       throw new Error("uint32 overflow");
     }
 
