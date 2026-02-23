@@ -46,10 +46,6 @@ export interface FuncImpl {
 export class GoBuilder extends IBuilder<go.Opcode, go.NodeFlag, go.ValueFlag> {
   constructor(private options: GoBuilderOptions) {
     super(options);
-
-    for (let kind of Object.values(GoKind)) {
-      this.SetString(kind);
-    };
   }
 
   protected buildNode(node: Node, id: NodeId): fb.Offset {

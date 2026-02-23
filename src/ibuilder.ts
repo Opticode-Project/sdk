@@ -54,6 +54,7 @@ export abstract class IBuilder<
 
   constructor(protected builderOptions: BuilderOptions) {
     this.builder = new fb.Builder(builderOptions.size ?? 1024);
+    this.SetString("");
   }
 
   protected abstract buildNode(node: INode<TOpcode>, id: NodeId): fb.Offset;
