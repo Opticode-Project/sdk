@@ -21,6 +21,7 @@ import {
   IBuilder,
   BuilderOptions,
 } from "../ibuilder";
+import { packIntArrayToBigInt } from "./utils";
 
 export interface GoBuilderOptions extends BuilderOptions {}
 
@@ -45,8 +46,6 @@ export interface FuncImpl {
 export class GoBuilder extends IBuilder<go.Opcode, go.NodeFlag, go.ValueFlag> {
   constructor(private options: GoBuilderOptions) {
     super(options);
-
-    this.SetString("");
   }
 
   protected buildNode(node: Node, id: NodeId): fb.Offset {
@@ -89,24 +88,85 @@ export class GoBuilder extends IBuilder<go.Opcode, go.NodeFlag, go.ValueFlag> {
     return _id;
   }
 
-  public DeleteNode(id: NodeId, recursive?: boolean) {
-    if (recursive) {
-      const node = this.nodes.get(id);
-      if (!node) {
-        console.error(`Unknown id of ${id}`);
-        return;
-      }
-      // TODO: Implement full recursion
-      for (const n of node[0].fields || []) {
-        if (n.flags & go.ValueFlag.Pointer) continue;
+  public DeleteNode(id: NodeId, recursive: boolean = false) {
+    if (!this.nodes.has(id)) {
+      console.error(`Unknown id of ${id}`);
+      return;
+    }
 
-        const success = this.nodes.delete(n.value as NodeId);
-        if (!success)
-          console.warn(`Failed to delete node part of ${id}: ${n.value}`);
+    if (!recursive) {
+      this.detachNode(id);
+      this.nodes.delete(id);
+      return;
+    }
+
+    this.deleteRecursive(id);
+  };
+
+  private deleteRecursive(id: NodeId, visited: Set<NodeId> = new Set<NodeId>()) {
+    if (visited.has(id)) return;
+    visited.add(id);
+
+    const entry = this.nodes.get(id);
+    if (!entry) return;
+
+    const [ node, offset ] = entry;
+
+    // Traverse children based on node type
+    switch (node.flags) {
+      case go.NodeFlag.NodeIndexed:
+        for (const n of node.fields || []) {
+          if ((n.flags & go.ValueFlag.Pointer) === 0)
+            continue;
+          
+          this.deleteRecursive(n.value as NodeId, visited);
+        }
+        break;
+
+      case go.NodeFlag.NodeBinary:
+        if (node.left && (node.left.flags & go.ValueFlag.Pointer)) {
+          this.deleteRecursive(node.left.value as NodeId, visited);
+        }
+
+        if (node.right && (node.right.flags & go.ValueFlag.Pointer)) {
+          this.deleteRecursive(node.right.value as NodeId, visited);
+        }
+        break;
+
+      case go.NodeFlag.NodeUnary:
+        if (node.value && (node.value.flags & go.ValueFlag.Pointer)) {
+          this.deleteRecursive(node.value.value as NodeId, visited);
+        }
+        break;
+    }
+
+    this.detachNode(id);
+    this.nodes.delete(id);
+  }
+
+  private detachNode(id: NodeId) {
+    const entry = this.nodes.get(id);
+    if (!entry) return;
+
+    const node = entry[0];
+
+    // Remove from parent.next
+    if (node.parent !== void 0 && this.nodes.has(node.parent)) {
+      const parentEntry = this.nodes.get(node.parent)!;
+
+      if (parentEntry[0].next === id) {
+        parentEntry[0].next = undefined;
       }
     }
 
-    this.nodes.delete(id);
+    // Remove next.parent
+    if (node.next && this.nodes.has(node.next)) {
+      const nextEntry = this.nodes.get(node.next)!;
+
+      if (nextEntry[0].parent === id) {
+        nextEntry[0].parent = undefined;
+      }
+    }
   }
 
   /**
@@ -1666,6 +1726,7 @@ export class GoBuilder extends IBuilder<go.Opcode, go.NodeFlag, go.ValueFlag> {
       case GoKind.MAP:
         typeOffset = this.CreateMapType(t as GoMapType);
         typeEnum = program.Type.MapType;
+        break;
       case GoKind.INTERFACE:
         typeOffset = this.CreateInterfaceType(t as GoInterfaceType);
         typeEnum = program.Type.StructureType;
@@ -1725,7 +1786,7 @@ export class GoBuilder extends IBuilder<go.Opcode, go.NodeFlag, go.ValueFlag> {
 
   public SetType(t: GoTypeDef): number {
     // check if type already exists
-    let uid = this.typelut.findIndex((v) => v.id === t.id);
+    let uid = this.typelut.findIndex((v) => v && v.id === t.id);
     if (uid >= 0) return uid;
 
     // otherwise, create the type and push it
@@ -1739,7 +1800,7 @@ export class GoBuilder extends IBuilder<go.Opcode, go.NodeFlag, go.ValueFlag> {
       addr,
     };
 
-    return addr;
+    return uid;
   }
 
   private CreateFuncType(func: GoFunctionType): fb.Offset {

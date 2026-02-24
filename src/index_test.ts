@@ -1,3 +1,4 @@
+import { fstat, writeFile } from "node:fs";
 import { GoBuilder, GoBuilderOptions, FuncImpl } from "./go/builder";
 import { NodeId } from "./ibuilder";
 import {

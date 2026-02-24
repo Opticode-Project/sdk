@@ -60,13 +60,10 @@ export abstract class IBuilder<
   protected abstract buildNode(node: INode<TOpcode>, id: NodeId): fb.Offset;
 
   private CreateStringLUT(): fb.Offset {
-    // Convert to array and sort numerically by key
-    const entries = this.stringlut.sort((a, b) => a.localeCompare(b));
-
     const offsets: fb.Offset[] = [];
 
-    for (let i = 0; i < entries.length; i++) {
-      const valueOffset = this.builder.createString(entries[i]);
+    for (let i = 0; i < this.stringlut.length; i++) {
+      const valueOffset = this.builder.createString(this.stringlut[i]);
 
       program.StringEntry.startStringEntry(this.builder);
       program.StringEntry.addKey(this.builder, i);
@@ -79,17 +76,15 @@ export abstract class IBuilder<
   }
 
   private CreateTypeLUT(): fb.Offset {
-    // Convert to array and sort numerically by key
-    const entries = Array.from(this.typelut.entries()).sort(
-      ([a], [b]) => a - b,
-    );
-
     const offsets: fb.Offset[] = [];
 
-    for (const [key, typeEntry] of entries) {
+    for (let i = 0; i < this.typelut.length; i++) {
+      const entry = this.typelut[i];
+      if (!entry) continue;
+      
       program.TypeEntry.startTypeEntry(this.builder);
-      program.TypeEntry.addKey(this.builder, key);
-      program.TypeEntry.addValue(this.builder, typeEntry.addr);
+      program.TypeEntry.addKey(this.builder, i);
+      program.TypeEntry.addValue(this.builder, entry.addr);
 
       offsets.push(program.TypeEntry.endTypeEntry(this.builder));
     }
