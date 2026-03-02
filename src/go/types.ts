@@ -1,4 +1,4 @@
-import { ChanDir, Kind } from "./golang";
+import { /*ChanDir,*/ Kind } from "./golang";
 
 export enum GoKind {
   INT = "int",
@@ -6,7 +6,7 @@ export enum GoKind {
   INT16 = "int16",
   INT32 = "int32",
   INT64 = "int64",
-  UINT = "uint",
+  //UINT = "uint",
   UINT8 = "uint8",
   UINT16 = "uint16",
   UINT32 = "uint32",
@@ -56,7 +56,7 @@ export const KindTable = {
   int16: Kind.Int16,
   int32: Kind.Int32,
   int64: Kind.Int64,
-  uint: Kind.Uint,
+  //uint: Kind.Uint,
   uint8: Kind.Uint8,
   uint16: Kind.Uint16,
   uint32: Kind.Uint32,
@@ -116,7 +116,8 @@ export interface GoMapType extends GoTypeHeader {
 
 export interface GoChanType extends GoTypeHeader {
   elem: GoTypeDef;
-  dir: ChanDir;
+  dir: number;
+  //dir: ChanDir;
 }
 
 export interface GoArrayType extends GoTypeHeader {
@@ -230,12 +231,12 @@ export class GoInterface {
   }
 }
 
-export function GoUint(name: string, bitSize: 8 | 16 | 32 | 64): GoTypeDef {
+/*export function GoUint(name: string, bitSize: 8 | 16 | 32 | 64): GoTypeDef {
   return {
     base: GoKind.UINT + bitSize.toString(),
     id: name,
   };
-}
+}*/
 
 export function GoUintptr(name: string): GoTypeDef {
   return {
@@ -320,7 +321,8 @@ export function GoPtr(def: GoTypeDef): GoPointerType {
 
 export function GoChan(
   def: GoTypeDef,
-  dir: ChanDir = ChanDir.Bidirectional,
+  dir: number,
+  //dir: ChanDir = ChanDir.Bidirectional,
 ): GoChanType {
   return {
     base: GoKind.CHANNEL,

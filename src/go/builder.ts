@@ -1716,28 +1716,28 @@ export class GoBuilder extends IBuilder<go.Opcode, go.NodeFlag, go.ValueFlag> {
     switch (t.base) {
       case GoKind.FUNC:
         typeOffset = this.CreateFuncType(t as GoFunctionType);
-        typeEnum = program.Type.FunctionType;
+        //typeEnum = program.Type.FunctionType;
         break;
       case GoKind.SLICE:
       case GoKind.ARRAY:
         typeOffset = this.CreateArrayType(t as GoArrayType);
-        typeEnum = program.Type.ArrayType;
+        //typeEnum = program.Type.ArrayType;
         break;
       case GoKind.MAP:
         typeOffset = this.CreateMapType(t as GoMapType);
-        typeEnum = program.Type.MapType;
+        //typeEnum = program.Type.MapType;
         break;
       case GoKind.INTERFACE:
         typeOffset = this.CreateInterfaceType(t as GoInterfaceType);
-        typeEnum = program.Type.StructureType;
+        //typeEnum = program.Type.StructureType;
         break;
       case GoKind.STRUCT:
         typeOffset = this.CreateStructType(t as GoStructType);
-        typeEnum = program.Type.StructureType;
+        //typeEnum = program.Type.StructureType;
         break;
       case GoKind.POINTER:
         typeOffset = this.CreatePointerType(t as GoPointerType);
-        typeEnum = program.Type.PointerType;
+        //typeEnum = program.Type.PointerType;
         break;
       case GoKind.BOOLEAN:
       case GoKind.CHANNEL:
@@ -1753,7 +1753,7 @@ export class GoBuilder extends IBuilder<go.Opcode, go.NodeFlag, go.ValueFlag> {
       case GoKind.INT8:
       case GoKind.RUNE:
       case GoKind.STRING:
-      case GoKind.UINT:
+      //case GoKind.UINT:
       case GoKind.UINT16:
       case GoKind.UINT32:
       case GoKind.UINT64:
@@ -1804,7 +1804,7 @@ export class GoBuilder extends IBuilder<go.Opcode, go.NodeFlag, go.ValueFlag> {
   }
 
   private CreateFuncType(func: GoFunctionType): fb.Offset {
-    let impl: fb.Offset = 0;
+    /*let impl: fb.Offset = 0;
 
     if (func.impl)
       impl = program.Pair.createPair(
@@ -1814,47 +1814,46 @@ export class GoBuilder extends IBuilder<go.Opcode, go.NodeFlag, go.ValueFlag> {
       );
 
     let typeSig: fb.Offset = 0;
-    if (func.typeSig) typeSig = this.SetType(func.typeSig);
+    if (func.typeSig) typeSig = this.SetType(func.typeSig);*/
 
     let paramsList: fb.Offset[] = [];
     for (const [val, ty] of func.params) {
-      paramsList.push(
+      /*paramsList.push(
         program.Pair.createPair(
           this.builder,
           this.SetString(val),
           this.SetType(ty),
         ),
-      );
+      );*/
     }
 
-    const params = program.FunctionType.createParamsVector(
+    const params = go.GoType.createParamsVector(
       this.builder,
-      paramsList,
+      [],
     );
 
     let resultsList: fb.Offset[] = [];
     for (const [val, ty] of func.results) {
-      resultsList.push(
+      /*resultsList.push(
         program.Pair.createPair(
           this.builder,
           this.SetString(val),
           this.SetType(ty),
         ),
-      );
+      );*/
     }
-    const results = program.FunctionType.createResultsVector(
+    const results = go.GoType.createResultsVector(
       this.builder,
-      resultsList,
+      [],
     );
 
-    program.FunctionType.startFunctionType(this.builder);
-    program.FunctionType.addParams(this.builder, params);
-    program.FunctionType.addResults(this.builder, results);
-    program.FunctionType.addImpl(this.builder, impl);
-    program.FunctionType.addTypeSig(this.builder, typeSig);
+    go.GoType.startGoType(this.builder);
+    go.GoType.addParams(this.builder, params);
+    go.GoType.addResults(this.builder, results);
+    //go.GoType.addImpl(this.builder, impl);
+    //go.GoType.addTypeSig(this.builder, typeSig);
 
-    const funcType = program.FunctionType.endFunctionType(this.builder);
-    return funcType;
+    return go.GoType.endGoType(this.builder);
   }
 
   private CreateArrayType(arr: GoArrayType): fb.Offset {
@@ -1862,19 +1861,22 @@ export class GoBuilder extends IBuilder<go.Opcode, go.NodeFlag, go.ValueFlag> {
 
     const elem = this.SetType(arr.elem);
 
-    program.ArrayType.startArrayType(this.builder);
-    program.ArrayType.addSize(this.builder, size);
-    program.ArrayType.addElem(this.builder, elem);
-    const arrayType = program.ArrayType.endArrayType(this.builder);
-    return arrayType;
+    go.GoType.startGoType(this.builder);
+    go.GoType.addSize(this.builder, size);
+    go.GoType.addElem(this.builder, elem);
+
+    return go.GoType.endGoType(this.builder);
   }
 
   private CreateMapType(map: GoMapType): fb.Offset {
     const key = this.SetType(map.key);
     const value = this.SetType(map.value);
 
-    const mapType = program.MapType.createMapType(this.builder, key, value);
-    return mapType;
+    go.GoType.startGoType(this.builder);
+    go.GoType.addKey(this.builder, key);
+    go.GoType.addValue(this.builder, value);
+
+    return go.GoType.endGoType(this.builder);
   }
 
   private CreateStructType(struct: GoStructType): fb.Offset {
@@ -1883,23 +1885,23 @@ export class GoBuilder extends IBuilder<go.Opcode, go.NodeFlag, go.ValueFlag> {
       const name = this.SetString(field.name);
       const _type = this.SetType(field.type);
 
-      program.StructureField.startStructureField(this.builder);
-      program.StructureField.addName(this.builder, name);
-      program.StructureField.addType(this.builder, _type);
+      go.StructField.startStructField(this.builder);
+      go.StructField.addName(this.builder, name);
+      go.StructField.addType(this.builder, _type);
       if (field.tag)
-        program.StructureField.addMisc(this.builder, this.SetString(field.tag));
-      fields.push(program.StructureField.endStructureField(this.builder));
+        go.StructField.addMisc(this.builder, this.SetString(field.tag));
+      fields.push(go.StructField.endStructField(this.builder));
     }
 
-    const fieldsOffset = program.StructureType.createFieldsVector(
+    const fieldsOffset = go.GoType.createFieldsVector(
       this.builder,
       fields,
     );
 
-    program.StructureType.startStructureType(this.builder);
-    program.StructureType.addFields(this.builder, fieldsOffset);
-    const structType = program.StructureType.endStructureType(this.builder);
-    return structType;
+    go.GoType.startGoType(this.builder);
+    go.GoType.addFields(this.builder, fieldsOffset);
+    
+    return go.GoType.endGoType(this.builder);
   }
 
   private CreateInterfaceType(_interface: GoInterfaceType): fb.Offset {
@@ -1909,20 +1911,23 @@ export class GoBuilder extends IBuilder<go.Opcode, go.NodeFlag, go.ValueFlag> {
       methods.push(_type);
     }
 
-    const methodsOffset = program.StructureType.createDefsVector(
+    const methodsOffset = go.GoType.createMethodsVector(
       this.builder,
-      methods,
+      [],
     );
 
-    program.StructureType.startStructureType(this.builder);
-    program.StructureType.addDefs(this.builder, methodsOffset);
-    const interfaceType = program.StructureType.endStructureType(this.builder);
-    return interfaceType;
+    go.GoType.startGoType(this.builder);
+    go.GoType.addMethods(this.builder, methodsOffset);
+    
+    return go.GoType.endGoType(this.builder);
   }
 
   private CreatePointerType(ptr: GoPointerType): fb.Offset {
     const _type = this.SetType(ptr.elem);
-    return program.PointerType.createPointerType(this.builder, _type);
+    go.GoType.startGoType(this.builder);
+    go.GoType.addElem(this.builder, _type);
+
+    return go.GoType.endGoType(this.builder);
   }
 
   private buildNodeValue(v: GoNodeValue): fb.Offset {
