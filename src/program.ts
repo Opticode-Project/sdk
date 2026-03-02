@@ -3,22 +3,14 @@
 /* eslint-disable @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any, @typescript-eslint/no-non-null-assertion */
 
 export { App } from './program/app.js';
-export { ArrayType } from './program/array-type.js';
 export { BinaryNode } from './program/binary-node.js';
 export { Flag } from './program/flag.js';
-export { FunctionType } from './program/function-type.js';
 export { IndexedNode } from './program/indexed-node.js';
-export { MapType } from './program/map-type.js';
 export { Node } from './program/node.js';
 export { NodeUnion } from './program/node-union.js';
 export { NodeValue } from './program/node-value.js';
-export { Pair } from './program/pair.js';
-export { PointerType } from './program/pointer-type.js';
 export { ProgramFlag } from './program/program-flag.js';
 export { StringEntry } from './program/string-entry.js';
-export { StructureField } from './program/structure-field.js';
-export { StructureType } from './program/structure-type.js';
-export { TupleType } from './program/tuple-type.js';
 export { Type } from './program/type.js';
 export { TypeDef } from './program/type-def.js';
 export { TypeEntry } from './program/type-entry.js';

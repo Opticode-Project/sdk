@@ -2,53 +2,33 @@
 
 /* eslint-disable @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any, @typescript-eslint/no-non-null-assertion */
 
-import { ArrayType } from '../program/array-type.js';
-import { FunctionType } from '../program/function-type.js';
-import { MapType } from '../program/map-type.js';
-import { PointerType } from '../program/pointer-type.js';
-import { StructureType } from '../program/structure-type.js';
-import { TupleType } from '../program/tuple-type.js';
+import { GoType } from '../go/golang/go-type.js';
 
 
 export enum Type {
   NONE = 0,
-  PointerType = 1,
-  StructureType = 2,
-  FunctionType = 3,
-  MapType = 4,
-  ArrayType = 5,
-  TupleType = 6
+  golang_GoType = 1
 }
 
 export function unionToType(
   type: Type,
-  accessor: (obj:ArrayType|FunctionType|MapType|PointerType|StructureType|TupleType) => ArrayType|FunctionType|MapType|PointerType|StructureType|TupleType|null
-): ArrayType|FunctionType|MapType|PointerType|StructureType|TupleType|null {
+  accessor: (obj:GoType) => GoType|null
+): GoType|null {
   switch(Type[type]) {
     case 'NONE': return null; 
-    case 'PointerType': return accessor(new PointerType())! as PointerType;
-    case 'StructureType': return accessor(new StructureType())! as StructureType;
-    case 'FunctionType': return accessor(new FunctionType())! as FunctionType;
-    case 'MapType': return accessor(new MapType())! as MapType;
-    case 'ArrayType': return accessor(new ArrayType())! as ArrayType;
-    case 'TupleType': return accessor(new TupleType())! as TupleType;
+    case 'golang_GoType': return accessor(new GoType())! as GoType;
     default: return null;
   }
 }
 
 export function unionListToType(
   type: Type, 
-  accessor: (index: number, obj:ArrayType|FunctionType|MapType|PointerType|StructureType|TupleType) => ArrayType|FunctionType|MapType|PointerType|StructureType|TupleType|null, 
+  accessor: (index: number, obj:GoType) => GoType|null, 
   index: number
-): ArrayType|FunctionType|MapType|PointerType|StructureType|TupleType|null {
+): GoType|null {
   switch(Type[type]) {
     case 'NONE': return null; 
-    case 'PointerType': return accessor(index, new PointerType())! as PointerType;
-    case 'StructureType': return accessor(index, new StructureType())! as StructureType;
-    case 'FunctionType': return accessor(index, new FunctionType())! as FunctionType;
-    case 'MapType': return accessor(index, new MapType())! as MapType;
-    case 'ArrayType': return accessor(index, new ArrayType())! as ArrayType;
-    case 'TupleType': return accessor(index, new TupleType())! as TupleType;
+    case 'golang_GoType': return accessor(index, new GoType())! as GoType;
     default: return null;
   }
 }

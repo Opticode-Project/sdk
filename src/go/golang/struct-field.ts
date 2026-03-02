@@ -22,11 +22,9 @@ static getSizePrefixedRootAsStructField(bb:flatbuffers.ByteBuffer, obj?:StructFi
   return (obj || new StructField()).__init(bb.readInt32(bb.position()) + bb.position(), bb);
 }
 
-name():string|null
-name(optionalEncoding:flatbuffers.Encoding):string|Uint8Array|null
-name(optionalEncoding?:any):string|Uint8Array|null {
+name():number {
   const offset = this.bb!.__offset(this.bb_pos, 4);
-  return offset ? this.bb!.__string(this.bb_pos + offset, optionalEncoding) : null;
+  return offset ? this.bb!.readUint32(this.bb_pos + offset) : 0;
 }
 
 type():number {
@@ -34,27 +32,25 @@ type():number {
   return offset ? this.bb!.readUint32(this.bb_pos + offset) : 0;
 }
 
-tag():string|null
-tag(optionalEncoding:flatbuffers.Encoding):string|Uint8Array|null
-tag(optionalEncoding?:any):string|Uint8Array|null {
+misc():number {
   const offset = this.bb!.__offset(this.bb_pos, 8);
-  return offset ? this.bb!.__string(this.bb_pos + offset, optionalEncoding) : null;
+  return offset ? this.bb!.readUint32(this.bb_pos + offset) : 0;
 }
 
 static startStructField(builder:flatbuffers.Builder) {
   builder.startObject(3);
 }
 
-static addName(builder:flatbuffers.Builder, nameOffset:flatbuffers.Offset) {
-  builder.addFieldOffset(0, nameOffset, 0);
+static addName(builder:flatbuffers.Builder, name:number) {
+  builder.addFieldInt32(0, name, 0);
 }
 
 static addType(builder:flatbuffers.Builder, type:number) {
   builder.addFieldInt32(1, type, 0);
 }
 
-static addTag(builder:flatbuffers.Builder, tagOffset:flatbuffers.Offset) {
-  builder.addFieldOffset(2, tagOffset, 0);
+static addMisc(builder:flatbuffers.Builder, misc:number) {
+  builder.addFieldInt32(2, misc, 0);
 }
 
 static endStructField(builder:flatbuffers.Builder):flatbuffers.Offset {
@@ -62,11 +58,11 @@ static endStructField(builder:flatbuffers.Builder):flatbuffers.Offset {
   return offset;
 }
 
-static createStructField(builder:flatbuffers.Builder, nameOffset:flatbuffers.Offset, type:number, tagOffset:flatbuffers.Offset):flatbuffers.Offset {
+static createStructField(builder:flatbuffers.Builder, name:number, type:number, misc:number):flatbuffers.Offset {
   StructField.startStructField(builder);
-  StructField.addName(builder, nameOffset);
+  StructField.addName(builder, name);
   StructField.addType(builder, type);
-  StructField.addTag(builder, tagOffset);
+  StructField.addMisc(builder, misc);
   return StructField.endStructField(builder);
 }
 }
