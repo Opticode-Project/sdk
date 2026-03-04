@@ -1,7 +1,7 @@
 # nodes-opticode
 This library is a node-based IR builder used by the Opticode app.
 
-It provides language-specific builders (e.g. Go) that construct a structured buffer representation of programs. This library does **not** generate source code directly.
+It provides language-specific builders (e.g., Go) that construct a structured buffer representation of programs. This library does **not** generate source code directly.
 
 Instead, it builds a graph of typed nodes that represent language constructs such as:
 - packages and imports
