@@ -4,7 +4,7 @@
 
 import * as flatbuffers from 'flatbuffers';
 
-import { Type, unionToType, unionListToType } from '../golang/type.js';
+import { Type } from '../golang/type.js';
 
 
 export class TypeDef {
@@ -30,21 +30,19 @@ base():number {
   return offset ? this.bb!.readUint32(this.bb_pos + offset) : 0;
 }
 
-id():string|null
-id(optionalEncoding:flatbuffers.Encoding):string|Uint8Array|null
-id(optionalEncoding?:any):string|Uint8Array|null {
+id():number {
   const offset = this.bb!.__offset(this.bb_pos, 6);
-  return offset ? this.bb!.__string(this.bb_pos + offset, optionalEncoding) : null;
+  return offset ? this.bb!.readUint32(this.bb_pos + offset) : 0;
 }
 
-typeType():Type {
+type(obj?:Type):Type|null {
   const offset = this.bb!.__offset(this.bb_pos, 8);
-  return offset ? this.bb!.readUint8(this.bb_pos + offset) : Type.NONE;
+  return offset ? (obj || new Type()).__init(this.bb!.__indirect(this.bb_pos + offset), this.bb!) : null;
 }
 
-type<T extends flatbuffers.Table>(obj:any):any|null {
+flags():number {
   const offset = this.bb!.__offset(this.bb_pos, 10);
-  return offset ? this.bb!.__union(obj, this.bb_pos + offset) : null;
+  return offset ? this.bb!.readUint32(this.bb_pos + offset) : 0;
 }
 
 static startTypeDef(builder:flatbuffers.Builder) {
@@ -55,16 +53,16 @@ static addBase(builder:flatbuffers.Builder, base:number) {
   builder.addFieldInt32(0, base, 0);
 }
 
-static addId(builder:flatbuffers.Builder, idOffset:flatbuffers.Offset) {
-  builder.addFieldOffset(1, idOffset, 0);
-}
-
-static addTypeType(builder:flatbuffers.Builder, typeType:Type) {
-  builder.addFieldInt8(2, typeType, Type.NONE);
+static addId(builder:flatbuffers.Builder, id:number) {
+  builder.addFieldInt32(1, id, 0);
 }
 
 static addType(builder:flatbuffers.Builder, typeOffset:flatbuffers.Offset) {
-  builder.addFieldOffset(3, typeOffset, 0);
+  builder.addFieldOffset(2, typeOffset, 0);
+}
+
+static addFlags(builder:flatbuffers.Builder, flags:number) {
+  builder.addFieldInt32(3, flags, 0);
 }
 
 static endTypeDef(builder:flatbuffers.Builder):flatbuffers.Offset {
@@ -72,12 +70,4 @@ static endTypeDef(builder:flatbuffers.Builder):flatbuffers.Offset {
   return offset;
 }
 
-static createTypeDef(builder:flatbuffers.Builder, base:number, idOffset:flatbuffers.Offset, typeType:Type, typeOffset:flatbuffers.Offset):flatbuffers.Offset {
-  TypeDef.startTypeDef(builder);
-  TypeDef.addBase(builder, base);
-  TypeDef.addId(builder, idOffset);
-  TypeDef.addTypeType(builder, typeType);
-  TypeDef.addType(builder, typeOffset);
-  return TypeDef.endTypeDef(builder);
-}
 }

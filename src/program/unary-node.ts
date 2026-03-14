@@ -27,7 +27,7 @@ static getSizePrefixedRootAsUnaryNode(bb:flatbuffers.ByteBuffer, obj?:UnaryNode)
 
 value(obj?:NodeValue):NodeValue|null {
   const offset = this.bb!.__offset(this.bb_pos, 4);
-  return offset ? (obj || new NodeValue()).__init(this.bb!.__indirect(this.bb_pos + offset), this.bb!) : null;
+  return offset ? (obj || new NodeValue()).__init(this.bb_pos + offset, this.bb!) : null;
 }
 
 static startUnaryNode(builder:flatbuffers.Builder) {
@@ -35,7 +35,7 @@ static startUnaryNode(builder:flatbuffers.Builder) {
 }
 
 static addValue(builder:flatbuffers.Builder, valueOffset:flatbuffers.Offset) {
-  builder.addFieldOffset(0, valueOffset, 0);
+  builder.addFieldStruct(0, valueOffset, 0);
 }
 
 static endUnaryNode(builder:flatbuffers.Builder):flatbuffers.Offset {

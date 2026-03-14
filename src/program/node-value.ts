@@ -13,56 +13,28 @@ export class NodeValue {
   return this;
 }
 
-static getRootAsNodeValue(bb:flatbuffers.ByteBuffer, obj?:NodeValue):NodeValue {
-  return (obj || new NodeValue()).__init(bb.readInt32(bb.position()) + bb.position(), bb);
-}
-
-static getSizePrefixedRootAsNodeValue(bb:flatbuffers.ByteBuffer, obj?:NodeValue):NodeValue {
-  bb.setPosition(bb.position() + flatbuffers.SIZE_PREFIX_LENGTH);
-  return (obj || new NodeValue()).__init(bb.readInt32(bb.position()) + bb.position(), bb);
+value():bigint {
+  return this.bb!.readUint64(this.bb_pos);
 }
 
 type():number {
-  const offset = this.bb!.__offset(this.bb_pos, 4);
-  return offset ? this.bb!.readUint32(this.bb_pos + offset) : 0;
-}
-
-value():bigint {
-  const offset = this.bb!.__offset(this.bb_pos, 6);
-  return offset ? this.bb!.readInt64(this.bb_pos + offset) : BigInt('0');
+  return this.bb!.readUint32(this.bb_pos + 8);
 }
 
 flags():number {
-  const offset = this.bb!.__offset(this.bb_pos, 8);
-  return offset ? this.bb!.readUint32(this.bb_pos + offset) : 0;
+  return this.bb!.readUint32(this.bb_pos + 12);
 }
 
-static startNodeValue(builder:flatbuffers.Builder) {
-  builder.startObject(3);
+static sizeOf():number {
+  return 16;
 }
 
-static addType(builder:flatbuffers.Builder, type:number) {
-  builder.addFieldInt32(0, type, 0);
+static createNodeValue(builder:flatbuffers.Builder, value: bigint, type: number, flags: number):flatbuffers.Offset {
+  builder.prep(8, 16);
+  builder.writeInt32(flags);
+  builder.writeInt32(type);
+  builder.writeInt64(BigInt(value ?? 0));
+  return builder.offset();
 }
 
-static addValue(builder:flatbuffers.Builder, value:bigint) {
-  builder.addFieldInt64(1, value, BigInt('0'));
-}
-
-static addFlags(builder:flatbuffers.Builder, flags:number) {
-  builder.addFieldInt32(2, flags, 0);
-}
-
-static endNodeValue(builder:flatbuffers.Builder):flatbuffers.Offset {
-  const offset = builder.endObject();
-  return offset;
-}
-
-static createNodeValue(builder:flatbuffers.Builder, type:number, value:bigint, flags:number):flatbuffers.Offset {
-  NodeValue.startNodeValue(builder);
-  NodeValue.addType(builder, type);
-  NodeValue.addValue(builder, value);
-  NodeValue.addFlags(builder, flags);
-  return NodeValue.endNodeValue(builder);
-}
 }

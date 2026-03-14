@@ -2,8 +2,12 @@
 
 /* eslint-disable @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any, @typescript-eslint/no-non-null-assertion */
 
-export { ChanDir } from './golang/chan-dir.js';
+export { App } from './golang/app.js';
 export { Kind } from './golang/kind.js';
 export { NodeFlag } from './golang/node-flag.js';
 export { Opcode } from './golang/opcode.js';
+export { StructField } from './golang/struct-field.js';
+export { Type } from './golang/type.js';
+export { TypeDef } from './golang/type-def.js';
+export { TypeEntry } from './golang/type-entry.js';
 export { ValueFlag } from './golang/value-flag.js';

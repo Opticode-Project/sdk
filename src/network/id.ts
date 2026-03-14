@@ -2,8 +2,7 @@
 
 /* eslint-disable @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any, @typescript-eslint/no-non-null-assertion */
 
-export enum ChanDir {
-  Bidirectional = 0,
-  Send = 1,
-  Receive = 2
+export enum ID {
+  Verification = 0,
+  RVerification = 1
 }

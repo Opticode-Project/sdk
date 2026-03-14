@@ -5,3 +5,5 @@ nodes.opt
 build.sh
 
 **/.DS_STORE
+
+src-old/

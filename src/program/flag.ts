@@ -3,8 +3,8 @@
 /* eslint-disable @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any, @typescript-eslint/no-non-null-assertion */
 
 export enum Flag {
-  None = 0,
-  NodeIndexed = 1,
-  NodeBinary = 2,
-  NodeUnary = 4
+  FirstSegment = 1,
+  SecondSegment = 2,
+  ThirdSegment = 4,
+  ForthSegment = 8
 }

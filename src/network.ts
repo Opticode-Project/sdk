@@ -2,9 +2,5 @@
 
 /* eslint-disable @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any, @typescript-eslint/no-non-null-assertion */
 
-export enum ProgramFlag {
-  FirstSegment = 0,
-  SecondSegment = 1,
-  ThirdSegment = 2,
-  ForthSegment = 4
-}
+export { ID } from './network/id.js';
+export { Packet } from './network/packet.js';

@@ -27,12 +27,12 @@ static getSizePrefixedRootAsBinaryNode(bb:flatbuffers.ByteBuffer, obj?:BinaryNod
 
 left(obj?:NodeValue):NodeValue|null {
   const offset = this.bb!.__offset(this.bb_pos, 4);
-  return offset ? (obj || new NodeValue()).__init(this.bb!.__indirect(this.bb_pos + offset), this.bb!) : null;
+  return offset ? (obj || new NodeValue()).__init(this.bb_pos + offset, this.bb!) : null;
 }
 
 right(obj?:NodeValue):NodeValue|null {
   const offset = this.bb!.__offset(this.bb_pos, 6);
-  return offset ? (obj || new NodeValue()).__init(this.bb!.__indirect(this.bb_pos + offset), this.bb!) : null;
+  return offset ? (obj || new NodeValue()).__init(this.bb_pos + offset, this.bb!) : null;
 }
 
 static startBinaryNode(builder:flatbuffers.Builder) {
@@ -40,11 +40,11 @@ static startBinaryNode(builder:flatbuffers.Builder) {
 }
 
 static addLeft(builder:flatbuffers.Builder, leftOffset:flatbuffers.Offset) {
-  builder.addFieldOffset(0, leftOffset, 0);
+  builder.addFieldStruct(0, leftOffset, 0);
 }
 
 static addRight(builder:flatbuffers.Builder, rightOffset:flatbuffers.Offset) {
-  builder.addFieldOffset(1, rightOffset, 0);
+  builder.addFieldStruct(1, rightOffset, 0);
 }
 
 static endBinaryNode(builder:flatbuffers.Builder):flatbuffers.Offset {

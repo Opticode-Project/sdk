@@ -4,10 +4,10 @@
 
 import * as flatbuffers from 'flatbuffers';
 
+import { TypeEntry } from '../golang/type-entry.js';
+import { Flag } from '../program/flag.js';
 import { Node } from '../program/node.js';
-import { ProgramFlag } from '../program/program-flag.js';
 import { StringEntry } from '../program/string-entry.js';
-import { TypeEntry } from '../program/type-entry.js';
 
 
 export class App {
@@ -86,9 +86,9 @@ version(optionalEncoding?:any):string|Uint8Array|null {
   return offset ? this.bb!.__string(this.bb_pos + offset, optionalEncoding) : null;
 }
 
-flags():ProgramFlag {
+flags():Flag {
   const offset = this.bb!.__offset(this.bb_pos, 18);
-  return offset ? this.bb!.readUint32(this.bb_pos + offset) : ProgramFlag.FirstSegment;
+  return offset ? this.bb!.readUint32(this.bb_pos + offset) : Flag.FirstSegment;
 }
 
 static startApp(builder:flatbuffers.Builder) {
@@ -159,8 +159,8 @@ static addVersion(builder:flatbuffers.Builder, versionOffset:flatbuffers.Offset)
   builder.addFieldOffset(6, versionOffset, 0);
 }
 
-static addFlags(builder:flatbuffers.Builder, flags:ProgramFlag) {
-  builder.addFieldInt32(7, flags, ProgramFlag.FirstSegment);
+static addFlags(builder:flatbuffers.Builder, flags:Flag) {
+  builder.addFieldInt32(7, flags, Flag.FirstSegment);
 }
 
 static endApp(builder:flatbuffers.Builder):flatbuffers.Offset {
@@ -176,7 +176,7 @@ static finishSizePrefixedAppBuffer(builder:flatbuffers.Builder, offset:flatbuffe
   builder.finish(offset, undefined, true);
 }
 
-static createApp(builder:flatbuffers.Builder, nodesOffset:flatbuffers.Offset, lutOffset:flatbuffers.Offset, typesOffset:flatbuffers.Offset, nameOffset:flatbuffers.Offset, schverOffset:flatbuffers.Offset, wailsverOffset:flatbuffers.Offset, versionOffset:flatbuffers.Offset, flags:ProgramFlag):flatbuffers.Offset {
+static createApp(builder:flatbuffers.Builder, nodesOffset:flatbuffers.Offset, lutOffset:flatbuffers.Offset, typesOffset:flatbuffers.Offset, nameOffset:flatbuffers.Offset, schverOffset:flatbuffers.Offset, wailsverOffset:flatbuffers.Offset, versionOffset:flatbuffers.Offset, flags:Flag):flatbuffers.Offset {
   App.startApp(builder);
   App.addNodes(builder, nodesOffset);
   App.addLut(builder, lutOffset);

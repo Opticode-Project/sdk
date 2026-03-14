@@ -32,7 +32,7 @@ id():number {
 
 fields(index: number, obj?:NodeValue):NodeValue|null {
   const offset = this.bb!.__offset(this.bb_pos, 6);
-  return offset ? (obj || new NodeValue()).__init(this.bb!.__indirect(this.bb!.__vector(this.bb_pos + offset) + index * 4), this.bb!) : null;
+  return offset ? (obj || new NodeValue()).__init(this.bb!.__vector(this.bb_pos + offset) + index * 16, this.bb!) : null;
 }
 
 fieldsLength():number {
@@ -52,16 +52,8 @@ static addFields(builder:flatbuffers.Builder, fieldsOffset:flatbuffers.Offset) {
   builder.addFieldOffset(1, fieldsOffset, 0);
 }
 
-static createFieldsVector(builder:flatbuffers.Builder, data:flatbuffers.Offset[]):flatbuffers.Offset {
-  builder.startVector(4, data.length, 4);
-  for (let i = data.length - 1; i >= 0; i--) {
-    builder.addOffset(data[i]!);
-  }
-  return builder.endVector();
-}
-
 static startFieldsVector(builder:flatbuffers.Builder, numElems:number) {
-  builder.startVector(4, numElems, 4);
+  builder.startVector(16, numElems, 8);
 }
 
 static endIndexedNode(builder:flatbuffers.Builder):flatbuffers.Offset {

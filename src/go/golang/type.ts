@@ -2,57 +2,200 @@
 
 /* eslint-disable @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any, @typescript-eslint/no-non-null-assertion */
 
-import { ArrayType } from '../golang/array-type.js';
-import { ChanType } from '../golang/chan-type.js';
-import { FuncType } from '../golang/func-type.js';
-import { InterfaceType } from '../golang/interface-type.js';
-import { MapType } from '../golang/map-type.js';
-import { PointerType } from '../golang/pointer-type.js';
-import { StructType } from '../golang/struct-type.js';
+import * as flatbuffers from 'flatbuffers';
+
+import { StructField } from '../golang/struct-field.js';
 
 
-export enum Type {
-  NONE = 0,
-  PointerType = 1,
-  InterfaceType = 2,
-  StructType = 3,
-  FuncType = 4,
-  MapType = 5,
-  ArrayType = 6,
-  ChanType = 7
+export class Type {
+  bb: flatbuffers.ByteBuffer|null = null;
+  bb_pos = 0;
+  __init(i:number, bb:flatbuffers.ByteBuffer):Type {
+  this.bb_pos = i;
+  this.bb = bb;
+  return this;
 }
 
-export function unionToType(
-  type: Type,
-  accessor: (obj:ArrayType|ChanType|FuncType|InterfaceType|MapType|PointerType|StructType) => ArrayType|ChanType|FuncType|InterfaceType|MapType|PointerType|StructType|null
-): ArrayType|ChanType|FuncType|InterfaceType|MapType|PointerType|StructType|null {
-  switch(Type[type]) {
-    case 'NONE': return null; 
-    case 'PointerType': return accessor(new PointerType())! as PointerType;
-    case 'InterfaceType': return accessor(new InterfaceType())! as InterfaceType;
-    case 'StructType': return accessor(new StructType())! as StructType;
-    case 'FuncType': return accessor(new FuncType())! as FuncType;
-    case 'MapType': return accessor(new MapType())! as MapType;
-    case 'ArrayType': return accessor(new ArrayType())! as ArrayType;
-    case 'ChanType': return accessor(new ChanType())! as ChanType;
-    default: return null;
-  }
+static getRootAsType(bb:flatbuffers.ByteBuffer, obj?:Type):Type {
+  return (obj || new Type()).__init(bb.readInt32(bb.position()) + bb.position(), bb);
 }
 
-export function unionListToType(
-  type: Type, 
-  accessor: (index: number, obj:ArrayType|ChanType|FuncType|InterfaceType|MapType|PointerType|StructType) => ArrayType|ChanType|FuncType|InterfaceType|MapType|PointerType|StructType|null, 
-  index: number
-): ArrayType|ChanType|FuncType|InterfaceType|MapType|PointerType|StructType|null {
-  switch(Type[type]) {
-    case 'NONE': return null; 
-    case 'PointerType': return accessor(index, new PointerType())! as PointerType;
-    case 'InterfaceType': return accessor(index, new InterfaceType())! as InterfaceType;
-    case 'StructType': return accessor(index, new StructType())! as StructType;
-    case 'FuncType': return accessor(index, new FuncType())! as FuncType;
-    case 'MapType': return accessor(index, new MapType())! as MapType;
-    case 'ArrayType': return accessor(index, new ArrayType())! as ArrayType;
-    case 'ChanType': return accessor(index, new ChanType())! as ChanType;
-    default: return null;
+static getSizePrefixedRootAsType(bb:flatbuffers.ByteBuffer, obj?:Type):Type {
+  bb.setPosition(bb.position() + flatbuffers.SIZE_PREFIX_LENGTH);
+  return (obj || new Type()).__init(bb.readInt32(bb.position()) + bb.position(), bb);
+}
+
+elem():number {
+  const offset = this.bb!.__offset(this.bb_pos, 4);
+  return offset ? this.bb!.readUint32(this.bb_pos + offset) : 0;
+}
+
+methods(index: number):bigint|null {
+  const offset = this.bb!.__offset(this.bb_pos, 6);
+  return offset ? this.bb!.readUint64(this.bb!.__vector(this.bb_pos + offset) + index * 8) : BigInt(0);
+}
+
+methodsLength():number {
+  const offset = this.bb!.__offset(this.bb_pos, 6);
+  return offset ? this.bb!.__vector_len(this.bb_pos + offset) : 0;
+}
+
+fields(index: number, obj?:StructField):StructField|null {
+  const offset = this.bb!.__offset(this.bb_pos, 8);
+  return offset ? (obj || new StructField()).__init(this.bb!.__vector(this.bb_pos + offset) + index * 12, this.bb!) : null;
+}
+
+fieldsLength():number {
+  const offset = this.bb!.__offset(this.bb_pos, 8);
+  return offset ? this.bb!.__vector_len(this.bb_pos + offset) : 0;
+}
+
+params(index: number):bigint|null {
+  const offset = this.bb!.__offset(this.bb_pos, 10);
+  return offset ? this.bb!.readUint64(this.bb!.__vector(this.bb_pos + offset) + index * 8) : BigInt(0);
+}
+
+paramsLength():number {
+  const offset = this.bb!.__offset(this.bb_pos, 10);
+  return offset ? this.bb!.__vector_len(this.bb_pos + offset) : 0;
+}
+
+results(index: number):bigint|null {
+  const offset = this.bb!.__offset(this.bb_pos, 12);
+  return offset ? this.bb!.readUint64(this.bb!.__vector(this.bb_pos + offset) + index * 8) : BigInt(0);
+}
+
+resultsLength():number {
+  const offset = this.bb!.__offset(this.bb_pos, 12);
+  return offset ? this.bb!.__vector_len(this.bb_pos + offset) : 0;
+}
+
+method():bigint {
+  const offset = this.bb!.__offset(this.bb_pos, 14);
+  return offset ? this.bb!.readUint64(this.bb_pos + offset) : BigInt('0');
+}
+
+key():number {
+  const offset = this.bb!.__offset(this.bb_pos, 16);
+  return offset ? this.bb!.readUint32(this.bb_pos + offset) : 0;
+}
+
+value():number {
+  const offset = this.bb!.__offset(this.bb_pos, 18);
+  return offset ? this.bb!.readUint32(this.bb_pos + offset) : 0;
+}
+
+dir():boolean {
+  const offset = this.bb!.__offset(this.bb_pos, 20);
+  return offset ? !!this.bb!.readInt8(this.bb_pos + offset) : false;
+}
+
+size():bigint {
+  const offset = this.bb!.__offset(this.bb_pos, 22);
+  return offset ? this.bb!.readUint64(this.bb_pos + offset) : BigInt('0');
+}
+
+static startType(builder:flatbuffers.Builder) {
+  builder.startObject(10);
+}
+
+static addElem(builder:flatbuffers.Builder, elem:number) {
+  builder.addFieldInt32(0, elem, 0);
+}
+
+static addMethods(builder:flatbuffers.Builder, methodsOffset:flatbuffers.Offset) {
+  builder.addFieldOffset(1, methodsOffset, 0);
+}
+
+static createMethodsVector(builder:flatbuffers.Builder, data:bigint[]):flatbuffers.Offset {
+  builder.startVector(8, data.length, 8);
+  for (let i = data.length - 1; i >= 0; i--) {
+    builder.addInt64(data[i]!);
   }
+  return builder.endVector();
+}
+
+static startMethodsVector(builder:flatbuffers.Builder, numElems:number) {
+  builder.startVector(8, numElems, 8);
+}
+
+static addFields(builder:flatbuffers.Builder, fieldsOffset:flatbuffers.Offset) {
+  builder.addFieldOffset(2, fieldsOffset, 0);
+}
+
+static startFieldsVector(builder:flatbuffers.Builder, numElems:number) {
+  builder.startVector(12, numElems, 4);
+}
+
+static addParams(builder:flatbuffers.Builder, paramsOffset:flatbuffers.Offset) {
+  builder.addFieldOffset(3, paramsOffset, 0);
+}
+
+static createParamsVector(builder:flatbuffers.Builder, data:bigint[]):flatbuffers.Offset {
+  builder.startVector(8, data.length, 8);
+  for (let i = data.length - 1; i >= 0; i--) {
+    builder.addInt64(data[i]!);
+  }
+  return builder.endVector();
+}
+
+static startParamsVector(builder:flatbuffers.Builder, numElems:number) {
+  builder.startVector(8, numElems, 8);
+}
+
+static addResults(builder:flatbuffers.Builder, resultsOffset:flatbuffers.Offset) {
+  builder.addFieldOffset(4, resultsOffset, 0);
+}
+
+static createResultsVector(builder:flatbuffers.Builder, data:bigint[]):flatbuffers.Offset {
+  builder.startVector(8, data.length, 8);
+  for (let i = data.length - 1; i >= 0; i--) {
+    builder.addInt64(data[i]!);
+  }
+  return builder.endVector();
+}
+
+static startResultsVector(builder:flatbuffers.Builder, numElems:number) {
+  builder.startVector(8, numElems, 8);
+}
+
+static addMethod(builder:flatbuffers.Builder, method:bigint) {
+  builder.addFieldInt64(5, method, BigInt('0'));
+}
+
+static addKey(builder:flatbuffers.Builder, key:number) {
+  builder.addFieldInt32(6, key, 0);
+}
+
+static addValue(builder:flatbuffers.Builder, value:number) {
+  builder.addFieldInt32(7, value, 0);
+}
+
+static addDir(builder:flatbuffers.Builder, dir:boolean) {
+  builder.addFieldInt8(8, +dir, +false);
+}
+
+static addSize(builder:flatbuffers.Builder, size:bigint) {
+  builder.addFieldInt64(9, size, BigInt('0'));
+}
+
+static endType(builder:flatbuffers.Builder):flatbuffers.Offset {
+  const offset = builder.endObject();
+  return offset;
+}
+
+static createType(builder:flatbuffers.Builder, elem:number, methodsOffset:flatbuffers.Offset, fieldsOffset:flatbuffers.Offset, paramsOffset:flatbuffers.Offset, resultsOffset:flatbuffers.Offset, method:bigint, key:number, value:number, dir:boolean, size:bigint):flatbuffers.Offset {
+  Type.startType(builder);
+  Type.addElem(builder, elem);
+  Type.addMethods(builder, methodsOffset);
+  Type.addFields(builder, fieldsOffset);
+  Type.addParams(builder, paramsOffset);
+  Type.addResults(builder, resultsOffset);
+  Type.addMethod(builder, method);
+  Type.addKey(builder, key);
+  Type.addValue(builder, value);
+  Type.addDir(builder, dir);
+  Type.addSize(builder, size);
+  return Type.endType(builder);
+}
 }

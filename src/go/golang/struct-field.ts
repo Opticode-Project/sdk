@@ -13,60 +13,28 @@ export class StructField {
   return this;
 }
 
-static getRootAsStructField(bb:flatbuffers.ByteBuffer, obj?:StructField):StructField {
-  return (obj || new StructField()).__init(bb.readInt32(bb.position()) + bb.position(), bb);
-}
-
-static getSizePrefixedRootAsStructField(bb:flatbuffers.ByteBuffer, obj?:StructField):StructField {
-  bb.setPosition(bb.position() + flatbuffers.SIZE_PREFIX_LENGTH);
-  return (obj || new StructField()).__init(bb.readInt32(bb.position()) + bb.position(), bb);
-}
-
-name():string|null
-name(optionalEncoding:flatbuffers.Encoding):string|Uint8Array|null
-name(optionalEncoding?:any):string|Uint8Array|null {
-  const offset = this.bb!.__offset(this.bb_pos, 4);
-  return offset ? this.bb!.__string(this.bb_pos + offset, optionalEncoding) : null;
+name():number {
+  return this.bb!.readUint32(this.bb_pos);
 }
 
 type():number {
-  const offset = this.bb!.__offset(this.bb_pos, 6);
-  return offset ? this.bb!.readUint32(this.bb_pos + offset) : 0;
+  return this.bb!.readUint32(this.bb_pos + 4);
 }
 
-tag():string|null
-tag(optionalEncoding:flatbuffers.Encoding):string|Uint8Array|null
-tag(optionalEncoding?:any):string|Uint8Array|null {
-  const offset = this.bb!.__offset(this.bb_pos, 8);
-  return offset ? this.bb!.__string(this.bb_pos + offset, optionalEncoding) : null;
+misc():number {
+  return this.bb!.readUint32(this.bb_pos + 8);
 }
 
-static startStructField(builder:flatbuffers.Builder) {
-  builder.startObject(3);
+static sizeOf():number {
+  return 12;
 }
 
-static addName(builder:flatbuffers.Builder, nameOffset:flatbuffers.Offset) {
-  builder.addFieldOffset(0, nameOffset, 0);
+static createStructField(builder:flatbuffers.Builder, name: number, type: number, misc: number):flatbuffers.Offset {
+  builder.prep(4, 12);
+  builder.writeInt32(misc);
+  builder.writeInt32(type);
+  builder.writeInt32(name);
+  return builder.offset();
 }
 
-static addType(builder:flatbuffers.Builder, type:number) {
-  builder.addFieldInt32(1, type, 0);
-}
-
-static addTag(builder:flatbuffers.Builder, tagOffset:flatbuffers.Offset) {
-  builder.addFieldOffset(2, tagOffset, 0);
-}
-
-static endStructField(builder:flatbuffers.Builder):flatbuffers.Offset {
-  const offset = builder.endObject();
-  return offset;
-}
-
-static createStructField(builder:flatbuffers.Builder, nameOffset:flatbuffers.Offset, type:number, tagOffset:flatbuffers.Offset):flatbuffers.Offset {
-  StructField.startStructField(builder);
-  StructField.addName(builder, nameOffset);
-  StructField.addType(builder, type);
-  StructField.addTag(builder, tagOffset);
-  return StructField.endStructField(builder);
-}
 }
