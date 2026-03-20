@@ -1657,54 +1657,31 @@ export class GoBuilder extends IBuilder<go.Opcode, go.NodeFlag, go.ValueFlag> {
   }
 
   private CreateFuncType(func: GoFunctionType): fb.Offset {
-    /*let impl: fb.Offset = 0;
-
-    if (func.impl)
-      impl = program.Pair.createPair(
-        this.builder,
-        this.SetString(func.impl[0]),
-        this.SetType(func.impl[1]),
-      );
-
-    let typeSig: fb.Offset = 0;
-    if (func.typeSig) typeSig = this.SetType(func.typeSig);*/
-
-    let paramsList: fb.Offset[] = [];
+    let paramsList: bigint[] = [];
     for (const [val, ty] of func.params) {
-      /*paramsList.push(
-        program.Pair.createPair(
-          this.builder,
-          this.SetString(val),
-          this.SetType(ty),
-        ),
-      );*/
+      const value = this.SetString(val);
+      const type = this.SetType(ty);
+
+      const packed = BigInt(value) << 32n | BigInt(type);
+      paramsList.push(packed);
     }
 
-    const params = go.Type.createParamsVector(
-      this.builder,
-      [],
-    );
+    const params = go.Type.createParamsVector(this.builder, paramsList);
 
-    let resultsList: fb.Offset[] = [];
+    let resultsList: bigint[] = [];
     for (const [val, ty] of func.results) {
-      /*resultsList.push(
-        program.Pair.createPair(
-          this.builder,
-          this.SetString(val),
-          this.SetType(ty),
-        ),
-      );*/
+      const value = this.SetString(val);
+      const type = this.SetType(ty);
+
+      const packed = BigInt(value) << 32n | BigInt(type);
+      resultsList.push(packed);
     }
-    const results = go.Type.createResultsVector(
-      this.builder,
-      [],
-    );
+
+    const results = go.Type.createResultsVector(this.builder, resultsList);
 
     go.Type.startType(this.builder);
     go.Type.addParams(this.builder, params);
     go.Type.addResults(this.builder, results);
-    //go.Type.addImpl(this.builder, impl);
-    //go.Type.addTypeSig(this.builder, typeSig);
 
     return go.Type.endType(this.builder);
   }
@@ -1733,52 +1710,43 @@ export class GoBuilder extends IBuilder<go.Opcode, go.NodeFlag, go.ValueFlag> {
   }
 
   private CreateStructType(struct: GoStructType): fb.Offset {
-    const fields: fb.Offset[] = [];
-    for (const field of struct.fields) {
-      const name = this.SetString(field.name);
-      const _type = this.SetType(field.type);
-
-      const f = go.StructField.createStructField(this.builder, name, _type, field.tag ? this.SetString(field.tag) : 0);
-      fields.push(f);
-      /*go.StructField.startStructField(this.builder);
-      go.StructField.addName(this.builder, name);
-      go.StructField.addType(this.builder, _type);
-      if (field.tag)
-        go.StructField.addMisc(this.builder, this.SetString(field.tag));
-      fields.push(go.StructField.endStructField(this.builder));*/
-    }
-
-    /*const fieldsOffset = go.Type.createFieldsVector(
-      this.builder,
-      fields,
-    );*/
-
     go.Type.startType(this.builder);
+    go.Type.startFieldsVector(this.builder, struct.fields.length);
 
-    go.Type.startFieldsVector(this.builder, fields.length);
-    for (const field of fields) {
-      go.Type.addFields(this.builder, field);
+    for (let i = struct.fields.length - 1; i >= 0; i--) {
+      const field = struct.fields[i];
+
+      const name = this.SetString(field.name);
+      const type = this.SetType(field.type);
+      const misc = field.tag ? this.SetString(field.tag) : 0;
+
+      go.StructField.createStructField(
+        this.builder, name, type, misc
+      );
     }
-    //go.Type.addFields(this.builder, fieldsOffset);
-    
+
+    const fieldsVector = this.builder.endVector();
+    go.Type.addFields(this.builder, fieldsVector);
+
     return go.Type.endType(this.builder);
   }
 
   private CreateInterfaceType(_interface: GoInterfaceType): fb.Offset {
-    const methods: number[] = [];
+    const methods: bigint[] = [];
+
     for (const method of _interface.methods) {
-      const _type = this.SetType(method);
-      methods.push(_type);
+      const id = this.SetString(method.id);
+      const type = this.SetType(method);
+
+      const packed = (BigInt(id) << 32n) | BigInt(type);
+      methods.push(packed);
     }
 
-    const methodsOffset = go.Type.createMethodsVector(
-      this.builder,
-      [],
-    );
+    const methodsOffset = go.Type.createMethodsVector(this.builder, methods);
 
     go.Type.startType(this.builder);
     go.Type.addMethods(this.builder, methodsOffset);
-    
+
     return go.Type.endType(this.builder);
   }
 
@@ -1811,10 +1779,7 @@ export class GoBuilder extends IBuilder<go.Opcode, go.NodeFlag, go.ValueFlag> {
     flags: number
   }): fb.Offset {
     return program.NodeValue.createNodeValue(
-      this.builder,
-      v.value,
-      v.type,
-      v.flags
+      this.builder, v.value, v.type, v.flags
     );
   }
 

@@ -98,8 +98,6 @@ export abstract class IBuilder<
     this.nodes.set(nodeId, [node, nodeOffset]);
     this.builder.finish(nodeOffset);
 
-    //console.log(nodeId, this.builder.asUint8Array());
-
     // Send node to the opticode app
     const packet = new SetNodePacket();
     packet.data = this.builder.asUint8Array();
