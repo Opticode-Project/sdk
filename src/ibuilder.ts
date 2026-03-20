@@ -91,7 +91,7 @@ export abstract class IBuilder<
 
     let nodeId = id || BigInt(this.nodes.size);
     while (this.nodes.has(nodeId)) {
-      nodeId = nodeId++; // Retry with new id if exists
+      nodeId = nodeId + 1n; // Retry with new id if exists
     }
 
     const nodeOffset = this.buildNode(node, nodeId);

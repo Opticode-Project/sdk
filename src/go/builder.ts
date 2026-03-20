@@ -1791,58 +1791,91 @@ export class GoBuilder extends IBuilder<go.Opcode, go.NodeFlag, go.ValueFlag> {
   }
 
 
+  private resolveNodeValue(v: GoNodeValue) {
+    return {
+      value: typeof v.value === "string"
+        ? BigInt(this.SetString(v.value))
+        : v.value ?? 0n,
 
-  private buildNodeValue(v: GoNodeValue): fb.Offset {
-    let typeHash: number | undefined;
-    if (v.type !== undefined) {
-      typeHash = this.SetType(v.type);
-    }
+      type: v.type !== undefined
+        ? this.SetType(v.type)
+        : 0,
 
-    let valueOffset: NodeId;
-    if (typeof v.value === "string") {
-      valueOffset = BigInt(this.SetString(v.value));
-    } else valueOffset = v.value ?? 0n;
+      flags: v.flags
+    };
+  }
 
+  private buildNodeValue(v: {
+    value: bigint,
+    type: number,
+    flags: number
+  }): fb.Offset {
     return program.NodeValue.createNodeValue(
-      this.builder, valueOffset, typeHash ?? 0, v.flags
+      this.builder,
+      v.value,
+      v.type,
+      v.flags
     );
   }
 
   private CreateIndexedNode(node: Node): fb.Offset {
-    const fields = node.fields?.map((v) => this.buildNodeValue(v)) ?? [];
+    const values = node.fields?.map((v) => this.resolveNodeValue(v)) ?? [];
+
+    program.IndexedNode.startFieldsVector(this.builder, values.length);
+    for (let i = values.length - 1; i >= 0; i--) {
+      this.buildNodeValue(values[i]);
+    }
+
+    const fieldsVector = this.builder.endVector();
 
     program.IndexedNode.startIndexedNode(this.builder);
     program.IndexedNode.addId(this.builder, node.id ?? 0);
-
-    for (const field of fields) {
-      program.IndexedNode.addFields(this.builder, field);
-    };
+    program.IndexedNode.addFields(this.builder, fieldsVector);
 
     return program.IndexedNode.endIndexedNode(this.builder);
   }
 
   private CreateBinaryNode(node: Node): fb.Offset {
-    let left: fb.Offset = 0;
-    if (node.left) {
-      left = this.buildNodeValue(node.left);
-    }
+    const left = node.left ? this.resolveNodeValue(node.left) : undefined;
+    const right = node.right ? this.resolveNodeValue(node.right) : undefined;
 
     program.BinaryNode.startBinaryNode(this.builder);
-    program.BinaryNode.addLeft(this.builder, left);
 
-    program.BinaryNode.addRight(this.builder, node.right ? this.buildNodeValue(node.right) : 0);
+    if (left) {
+      this.buildNodeValue(left);
+
+      program.BinaryNode.addLeft(
+        this.builder,
+        this.builder.offset()
+      );
+    }
+
+    if (right) {
+      this.buildNodeValue(right);
+
+      program.BinaryNode.addRight(
+        this.builder,
+        this.builder.offset()
+      );
+    }
     
     return program.BinaryNode.endBinaryNode(this.builder);
   }
 
   private CreateUnaryNode(node: Node): fb.Offset {
-    let value: fb.Offset = 0;
-    if (node.value) {
-      value = this.buildNodeValue(node.value);
-    }
+    const value = node.value ? this.resolveNodeValue(node.value) : undefined;
 
     program.UnaryNode.startUnaryNode(this.builder);
-    program.UnaryNode.addValue(this.builder, value);
+
+    if (value) {
+      this.buildNodeValue(value);
+      
+      program.UnaryNode.addValue(
+        this.builder,
+        this.builder.offset()
+      );
+    }
+
     return program.UnaryNode.endUnaryNode(this.builder);
   }
 
