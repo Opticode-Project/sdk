@@ -4,5 +4,10 @@
 
 export enum ID {
   Verification = 0,
-  RVerification = 1
+  RVerification = 1,
+  SetNode = 2,
+  DeleteNode = 3,
+  ConnectNodes = 4,
+  UpdateNodeField = 5,
+  Export = 6
 }

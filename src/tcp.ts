@@ -16,17 +16,18 @@ export class TCPClient {
   public decoder = new FrameDecoder();
   protected builder: fb.Builder;
 
-  constructor(size = 1024) {
+  constructor(size = 256) {
     this.builder = new fb.Builder(size);
   }
 
   /**
-   * 
+   * Registers all packets and opens a TCP connections to the Opticode app
+   * using the specified host address and port.
    */
-  async connect(port = 27430): Promise<void> {
+  async connect(host: string = "127.0.0.1", port: number = 27430): Promise<void> {
     await IPacket.createAll();
 
-    const socket = await this.tryPort(port);
+    const socket = await this.tryConnection(host, port);
     if (!socket) {
       throw new Error("Server not found");
     }
@@ -68,12 +69,12 @@ export class TCPClient {
 
   /**
    * Used for checking if a compiler is running on the specified port.
-   * If handshake is successful, it returns the socket connection.
+   * If verification is successful, it returns the socket connection.
    */
-  private tryPort(port: number): Promise<network.Socket | undefined> {
+  private tryConnection(host: string, port: number): Promise<network.Socket | undefined> {
     return new Promise((resolve, reject) => {
       const decoder = new FrameDecoder();
-      const socket = network.createConnection({ host: "127.0.0.1", port });
+      const socket = network.createConnection({ host, port });
 
       socket.setTimeout(200);
 
@@ -89,7 +90,7 @@ export class TCPClient {
         handshake.protocol = TCPClient.PROTOCOL;
         handshake.language = "golang";
 
-        this.sendPacket(socket, handshake);
+        this.sendPacketToSocket(socket, handshake);
       });
 
       socket.on("data", data => {
@@ -126,11 +127,15 @@ export class TCPClient {
     });
   }
 
-  public sendPacket(socket: network.Socket, packet: IPacket) {
-    // if (!this.socket) {
-    //   throw new Error("Socket not connected");
-    // }
+  public sendPacket(packet: IPacket) {
+    if (!this.socket) {
+      throw new Error("Socket not connected");
+    }
 
+    this.sendPacketToSocket(this.socket, packet);
+  }
+
+  private sendPacketToSocket(socket: network.Socket, packet: IPacket) {
     this.builder.clear();
 
     const payload = IPacket.encode(packet);
@@ -145,6 +150,7 @@ export class TCPClient {
     this.builder.finish(packetOffset);
 
     const buffer = this.builder.asUint8Array();
+    //console.log("Payload:", buffer);
 
     // Write to the socket stream
     const stream = new BinaryStream();

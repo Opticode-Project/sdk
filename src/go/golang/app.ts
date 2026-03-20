@@ -5,9 +5,9 @@
 import * as flatbuffers from 'flatbuffers';
 
 import { TypeEntry } from '../golang/type-entry.js';
-import { Flag } from '../program/flag.js';
-import { Node } from '../program/node.js';
-import { StringEntry } from '../program/string-entry.js';
+import { Flag } from '../../program/flag.js';
+import { Node } from '../../program/node.js';
+import { StringEntry } from '../../program/string-entry.js';
 
 
 export class App {
