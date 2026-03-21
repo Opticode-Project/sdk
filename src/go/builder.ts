@@ -1642,15 +1642,14 @@ export class GoBuilder extends IBuilder<go.Opcode, go.NodeFlag, go.ValueFlag> {
     let uid = this.typelut.findIndex((v) => v && v.id === t.id);
     if (uid >= 0) return uid;
 
-    // otherwise, create the type and push it
-    const addr = this.SerializeType(t);
-
     uid = this.nextTypeId++ >>> 0;
-    if (uid > 0xfffffffe) throw new Error("uint32 overflow");
+    if (uid > 0xfffffffe) {
+      throw new Error("uint32 overflow");
+    }
 
     this.typelut[uid] = {
       id: t.id,
-      addr,
+      type: t,
     };
 
     return uid;
@@ -1871,10 +1870,11 @@ export class GoBuilder extends IBuilder<go.Opcode, go.NodeFlag, go.ValueFlag> {
       if (!entry) {
         continue;
       }
-        
+      const addr = this.SerializeType(entry.type);
+
       go.TypeEntry.startTypeEntry(this.builder);
       go.TypeEntry.addKey(this.builder, i);
-      go.TypeEntry.addValue(this.builder, entry.addr);
+      go.TypeEntry.addValue(this.builder, addr);
   
       offsets.push(
         go.TypeEntry.endTypeEntry(this.builder)

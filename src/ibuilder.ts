@@ -34,9 +34,14 @@ export interface INode<
   value?: TNodeValue;
 }
 
+export interface TypeHeader<TBase = any> {
+  base: TBase;
+  id: string;
+}
+
 interface TypeEntry {
   id: string;
-  addr: fb.Offset;
+  type: TypeHeader;
 }
 
 export interface BuilderOptions {

@@ -1,3 +1,4 @@
+import { TypeHeader } from "../ibuilder";
 import { /*ChanDir,*/ Kind } from "./golang";
 
 export enum GoKind {
@@ -35,10 +36,7 @@ export enum GoKind {
 
 export type GoType = Kind | string;
 
-export interface GoTypeHeader {
-  base: GoType;
-  id: string;
-}
+export interface GoTypeHeader extends TypeHeader<GoType> {}
 
 export type GoTypeDef =
   | GoPointerType
