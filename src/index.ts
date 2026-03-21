@@ -78,7 +78,11 @@ const builder = new GoBuilder(options);
   const IfId = builder.SetNode(IfNode);
 
   builder.ConnectNodes(varId, IfId);
-  const mainFuncType = GoFunc("main", [], []);
+  const mainFuncType = GoFunc("main", [
+    ["a", GoInt("int8", 8)]
+  ], [
+    ["b", GoInt("int16", 16)]
+  ]);
 
   let body: NodeId[] = [];
   for (let i = 0; i < 5; i++) {

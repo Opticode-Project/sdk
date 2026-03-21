@@ -1661,8 +1661,9 @@ export class GoBuilder extends IBuilder<go.Opcode, go.NodeFlag, go.ValueFlag> {
       const value = this.SetString(val);
       const type = this.SetType(ty);
 
-      const packed = BigInt(value) << 32n | BigInt(type);
-      paramsList.push(packed);
+      paramsList.push(
+        (BigInt(value) << 32n) | BigInt(type)
+      );
     }
 
     const params = go.Type.createParamsVector(this.builder, paramsList);
@@ -1672,8 +1673,9 @@ export class GoBuilder extends IBuilder<go.Opcode, go.NodeFlag, go.ValueFlag> {
       const value = this.SetString(val);
       const type = this.SetType(ty);
 
-      const packed = BigInt(value) << 32n | BigInt(type);
-      resultsList.push(packed);
+      resultsList.push(
+        (BigInt(value) << 32n) | BigInt(type)
+      );
     }
 
     const results = go.Type.createResultsVector(this.builder, resultsList);
@@ -1737,8 +1739,9 @@ export class GoBuilder extends IBuilder<go.Opcode, go.NodeFlag, go.ValueFlag> {
       const id = this.SetString(method.id);
       const type = this.SetType(method);
 
-      const packed = (BigInt(id) << 32n) | BigInt(type);
-      methods.push(packed);
+      methods.push(
+        (BigInt(id) << 32n) | BigInt(type)
+      );
     }
 
     const methodsOffset = go.Type.createMethodsVector(this.builder, methods);
@@ -1843,22 +1846,22 @@ export class GoBuilder extends IBuilder<go.Opcode, go.NodeFlag, go.ValueFlag> {
     return program.UnaryNode.endUnaryNode(this.builder);
   }
 
-  // Export 
+  // Export
   public CreateStringLUT(): fb.Offset {
     const offsets: fb.Offset[] = [];
-  
-    for (let i = 0; i < this.stringlut.length; i++) {
-      const valueOffset = this.builder.createString(this.stringlut[i]);
-  
+
+    for (const [id, str] of this.stringlut) {
+      const valueOffset = this.builder.createString(str);
+
       program.StringEntry.startStringEntry(this.builder);
-      program.StringEntry.addKey(this.builder, i);
+      program.StringEntry.addKey(this.builder, id);
       program.StringEntry.addValue(this.builder, valueOffset);
-  
+
       offsets.push(
         program.StringEntry.endStringEntry(this.builder)
       );
     }
-  
+
     return go.App.createLutVector(this.builder, offsets);
   }
 
@@ -1885,8 +1888,8 @@ export class GoBuilder extends IBuilder<go.Opcode, go.NodeFlag, go.ValueFlag> {
   }
 
   public buildApp(flags: number): Uint8Array {
-    const stringLut: fb.Offset = this.CreateStringLUT();
     const typeLut: fb.Offset = this.CreateTypeLUT();
+    const stringLut: fb.Offset = this.CreateStringLUT();
   
     const name = this.builder.createString(
       this.builderOptions.name ?? "Unnamed Program",

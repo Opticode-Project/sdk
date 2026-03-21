@@ -60,7 +60,7 @@ export abstract class IBuilder<
   protected nodes = new Map<NodeId, [INode<TOpcode>, fb.Offset]>();
 
   protected nextStringId: number = 1;
-  protected stringlut: string[] = [];
+  protected stringlut = new Map<number, string>();
 
   protected nextTypeId: number = 1;
   protected typelut: TypeEntry[] = [];
@@ -174,13 +174,18 @@ export abstract class IBuilder<
 
 
   protected SetString(s: string): number {
+    // check if string already exists
+    for (const [id, val] of this.stringlut) {
+      if (val === s) return id;
+    }
+
     const id = this.nextStringId++ >>> 0;
 
     if (id > 0xfffffffe) {
       throw new Error("uint32 overflow");
     }
 
-    this.stringlut[id] = s;
+    this.stringlut.set(id, s);
     return id;
   }
 
@@ -212,6 +217,6 @@ export abstract class IBuilder<
     this.builder.clear();
     this.nodes.clear();
 
-    this.stringlut.length = 0;
+    this.stringlut.clear();
   }
 }
