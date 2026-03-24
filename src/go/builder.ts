@@ -490,10 +490,27 @@ export class GoBuilder extends IBuilder<go.Opcode, go.NodeFlag, go.ValueFlag> {
    * }
    * ```
    */
-  public CreateSwitchNode(expression: NodeId, body: NodeId[]): Node {
-    return this.createIndexed(go.Opcode.Switch, undefined, [
-      /*this.makePtr(expression),*/ ...this.makePtrFields(body),
-    ]);
+  public CreateSwitchNode(
+    expression: NodeId | undefined,
+    body: NodeId[]
+  ): Node {
+    const fields: GoNodeValue[] = [];
+
+    if (expression !== void 0) {
+      fields.push({
+        value: expression,
+        flags: go.ValueFlag.Pointer | go.ValueFlag.SwitchExp,
+      });
+    }
+
+    fields.push(
+      ...body.map(v => ({
+        value: v,
+        flags: go.ValueFlag.Pointer | go.ValueFlag.SwitchBody,
+      }))
+    );
+
+    return this.createIndexed(go.Opcode.Switch, undefined, fields);
   }
 
   /**
@@ -522,19 +539,26 @@ export class GoBuilder extends IBuilder<go.Opcode, go.NodeFlag, go.ValueFlag> {
     );
   }
 
-  public CreateCaseNode(expression: NodeId, body: NodeId[]): Node {
+  public CreateCaseNode(expressions: NodeId[], body: NodeId[]): Node {
     return this.createIndexed(go.Opcode.Case, undefined, [
-      this.makePtr(expression),
-      ...this.makePtrFields(body),
+      ...expressions.map(v => ({
+        value: v,
+        flags: go.ValueFlag.Pointer | go.ValueFlag.CaseExp,
+      })),
+      ...body.map(v => ({
+        value: v,
+        flags: go.ValueFlag.Pointer | go.ValueFlag.CaseBody,
+      }))
     ]);
   }
 
   public CreateDefaultNode(body: NodeId[]): Node {
-    return this.createIndexed(
-      go.Opcode.Default,
-      undefined,
-      this.makePtrFields(body),
-    );
+    return this.createIndexed(go.Opcode.Default, undefined, [
+      ...body.map(v => ({
+        value: v,
+        flags: go.ValueFlag.Pointer | go.ValueFlag.CaseBody,
+      }))
+    ]);
   }
 
   /**

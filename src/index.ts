@@ -112,6 +112,43 @@ const builder = new GoBuilder(options);
   const funcTypeNode = builder.CreateTypeNode(testFunc);
   const funcTypeId = builder.SetNode(funcTypeNode);
   builder.ConnectNodes(interfTypeId, funcTypeId);
+
+  // switch statement
+  // case 1: fmt.Println("one")
+  const firstCaseBody = builder.SetNode(
+    builder.CreateCallNode("fmt.Println", [ "one" ])
+  );
+
+  const firstCase = builder.SetNode(
+    builder.CreateCaseNode([], [ firstCaseBody ])
+  );
+
+
+  // case 2: fmt.Println("two")
+  const secondCaseBody = builder.SetNode(
+    builder.CreateCallNode("fmt.Println", [ "two" ])
+  );
+
+  const secondCase = builder.SetNode(
+    builder.CreateCaseNode([], [ secondCaseBody ])
+  );
+
+
+  // default: fmt.Println("other")
+  const defaultBody = builder.SetNode(
+    builder.CreateCallNode("fmt.Println", ["other"])
+  );
+
+  const defaultNode = builder.SetNode(
+    builder.CreateDefaultNode([defaultBody])
+  );
+
+  // switch x { ... }
+  const switchId = builder.SetNode(
+    builder.CreateSwitchNode(undefined, [ firstCase, secondCase, defaultNode ])
+  );
+
+  builder.ConnectNodes(funcTypeId, switchId);
   
   // func main() {}
   const mainFuncType = GoFunc("main", [], []);
@@ -144,7 +181,7 @@ const builder = new GoBuilder(options);
   };
   const mainFuncNode = builder.CreateFuncNode(mainFuncDef);
   const mainFuncId = builder.SetNode(mainFuncNode);
-  builder.ConnectNodes(funcTypeId, mainFuncId);
+  builder.ConnectNodes(switchId, mainFuncId);
 
   
   builder.Export();
