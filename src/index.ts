@@ -78,11 +78,43 @@ const builder = new GoBuilder(options);
   const IfId = builder.SetNode(IfNode);
 
   builder.ConnectNodes(varId, IfId);
-  const mainFuncType = GoFunc("main", [
+
+  const testFunc = GoFunc("testFunc", [
     ["a", GoInt("int8", 8)]
   ], [
     ["b", GoInt("int16", 16)]
   ]);
+
+  // Struct
+  const struct = new GoStruct();
+  struct.Field("meow", GoInt("structInt", 8));
+  struct.Field("testFunc", testFunc);
+
+  const structTypeNode = builder.CreateTypeNode(
+    struct.AsDefinition()
+  );
+  const structTypeId = builder.SetNode(structTypeNode);
+  
+  builder.ConnectNodes(IfId, structTypeId);
+
+  // Interface
+  const interf = new GoInterface();
+  interf.Method(testFunc);
+
+  const interfTypeNode = builder.CreateTypeNode(
+    interf.AsDefinition()
+  );
+  const interfTypeId = builder.SetNode(interfTypeNode);
+  
+  builder.ConnectNodes(structTypeId, interfTypeId);
+
+  // type X = func()
+  const funcTypeNode = builder.CreateTypeNode(testFunc);
+  const funcTypeId = builder.SetNode(funcTypeNode);
+  builder.ConnectNodes(interfTypeId, funcTypeId);
+  
+  // func main() {}
+  const mainFuncType = GoFunc("main", [], []);
 
   let body: NodeId[] = [];
   for (let i = 0; i < 5; i++) {
@@ -112,7 +144,7 @@ const builder = new GoBuilder(options);
   };
   const mainFuncNode = builder.CreateFuncNode(mainFuncDef);
   const mainFuncId = builder.SetNode(mainFuncNode);
-  builder.ConnectNodes(IfId, mainFuncId);
+  builder.ConnectNodes(funcTypeId, mainFuncId);
 
   
   builder.Export();

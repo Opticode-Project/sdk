@@ -1711,7 +1711,6 @@ export class GoBuilder extends IBuilder<go.Opcode, go.NodeFlag, go.ValueFlag> {
   }
 
   private CreateStructType(struct: GoStructType): fb.Offset {
-    go.Type.startType(this.builder);
     go.Type.startFieldsVector(this.builder, struct.fields.length);
 
     for (let i = struct.fields.length - 1; i >= 0; i--) {
@@ -1727,6 +1726,8 @@ export class GoBuilder extends IBuilder<go.Opcode, go.NodeFlag, go.ValueFlag> {
     }
 
     const fieldsVector = this.builder.endVector();
+
+    go.Type.startType(this.builder);
     go.Type.addFields(this.builder, fieldsVector);
 
     return go.Type.endType(this.builder);

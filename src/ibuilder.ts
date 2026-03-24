@@ -69,6 +69,8 @@ export abstract class IBuilder<
   constructor(protected builderOptions: BuilderOptions) {
     this.builder = new fb.Builder(builderOptions.size ?? 1024);
     this.socket = new TCPClient();
+    
+    this.SetString("");
   }
 
   public Initialize(): Promise<void> {
