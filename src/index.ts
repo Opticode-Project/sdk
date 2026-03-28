@@ -120,7 +120,7 @@ const builder = new GoBuilder(options);
   );
 
   const firstCase = builder.SetNode(
-    builder.CreateCaseNode([], [ firstCaseBody ])
+    builder.CreateCaseNode([ "1" ], [ firstCaseBody ])
   );
 
 
@@ -130,7 +130,7 @@ const builder = new GoBuilder(options);
   );
 
   const secondCase = builder.SetNode(
-    builder.CreateCaseNode([], [ secondCaseBody ])
+    builder.CreateCaseNode([ "2" ], [ secondCaseBody ])
   );
 
 
@@ -145,7 +145,9 @@ const builder = new GoBuilder(options);
 
   // switch x { ... }
   const switchId = builder.SetNode(
-    builder.CreateSwitchNode(undefined, [ firstCase, secondCase, defaultNode ])
+    builder.CreateSwitchNode(
+      builder.SetNode(builder.CreateReferenceNode("x")),
+      [ firstCase, secondCase, defaultNode ])
   );
 
   builder.ConnectNodes(funcTypeId, switchId);

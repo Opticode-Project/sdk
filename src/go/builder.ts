@@ -48,19 +48,17 @@ export class GoBuilder extends IBuilder<go.Opcode, go.NodeFlag, go.ValueFlag> {
   protected buildNode(node: Node, id: NodeId): fb.Offset {
     let nodeType = program.NodeUnion.NONE;
     let nodeContentOffset: fb.Offset = 0;
-    switch (node.flags) {
-      case go.NodeFlag.NodeIndexed:
-        nodeType = program.NodeUnion.IndexedNode;
-        nodeContentOffset = this.CreateIndexedNode(node);
-        break;
-      case go.NodeFlag.NodeBinary:
-        nodeType = program.NodeUnion.BinaryNode;
-        nodeContentOffset = this.CreateBinaryNode(node);
-        break;
-      case go.NodeFlag.NodeUnary:
-        nodeType = program.NodeUnion.UnaryNode;
-        nodeContentOffset = this.CreateUnaryNode(node);
-        break;
+    if (node.flags & go.NodeFlag.NodeIndexed) {
+      nodeType = program.NodeUnion.IndexedNode;
+      nodeContentOffset = this.CreateIndexedNode(node);
+    }
+    else if (node.flags & go.NodeFlag.NodeBinary) {
+      nodeType = program.NodeUnion.BinaryNode;
+      nodeContentOffset = this.CreateBinaryNode(node);
+    }
+    else if (node.flags & go.NodeFlag.NodeUnary) {
+      nodeType = program.NodeUnion.UnaryNode;
+      nodeContentOffset = this.CreateUnaryNode(node);
     }
 
     program.Node.startNode(this.builder);
@@ -88,13 +86,11 @@ export class GoBuilder extends IBuilder<go.Opcode, go.NodeFlag, go.ValueFlag> {
     return !isNaN(Number(str));
   }
 
-  private makeValue(v: string | NodeId, t?: GoTypeDef): GoNodeValue {
-    let flags: number;
-
+  private makeValue(v: string | NodeId, flags: number = 0, t?: GoTypeDef): GoNodeValue {
     if (typeof v === "bigint") {
-      flags = go.ValueFlag.Pointer;
+      flags |= go.ValueFlag.Pointer;
     } else {
-      flags = this.isValidNumber(v)
+      flags |= this.isValidNumber(v)
         ? go.ValueFlag.None
         : go.ValueFlag.Quotation;
     }
@@ -253,7 +249,7 @@ export class GoBuilder extends IBuilder<go.Opcode, go.NodeFlag, go.ValueFlag> {
       opcode: go.Opcode.ConstValue,
       flags: go.NodeFlag.NodeBinary,
 
-      left: this.makeValue(name, type),
+      left: this.makeValue(name, 0, type),
       right: this.makeValue(value),
     };
   }
@@ -294,7 +290,7 @@ export class GoBuilder extends IBuilder<go.Opcode, go.NodeFlag, go.ValueFlag> {
       opcode: go.Opcode.VarValue,
       flags: go.NodeFlag.NodeBinary,
 
-      left: this.makeValue(name, type),
+      left: this.makeValue(name, 0, type),
       right: this.makeValue(value),
     };
   }
@@ -491,16 +487,15 @@ export class GoBuilder extends IBuilder<go.Opcode, go.NodeFlag, go.ValueFlag> {
    * ```
    */
   public CreateSwitchNode(
-    expression: NodeId | undefined,
+    expression: NodeId | string | undefined,
     body: NodeId[]
   ): Node {
     const fields: GoNodeValue[] = [];
 
     if (expression !== void 0) {
-      fields.push({
-        value: expression,
-        flags: go.ValueFlag.Pointer | go.ValueFlag.SwitchExp,
-      });
+      fields.push(
+        this.makeValue(expression, go.ValueFlag.SwitchExp)
+      );
     }
 
     fields.push(
@@ -539,12 +534,11 @@ export class GoBuilder extends IBuilder<go.Opcode, go.NodeFlag, go.ValueFlag> {
     );
   }
 
-  public CreateCaseNode(expressions: NodeId[], body: NodeId[]): Node {
+  public CreateCaseNode(expressions: (NodeId | string)[], body: NodeId[]): Node {
     return this.createIndexed(go.Opcode.Case, undefined, [
-      ...expressions.map(v => ({
-        value: v,
-        flags: go.ValueFlag.Pointer | go.ValueFlag.CaseExp,
-      })),
+      ...expressions.map(
+        v => this.makeValue(v, go.ValueFlag.CaseExp)
+      ),
       ...body.map(v => ({
         value: v,
         flags: go.ValueFlag.Pointer | go.ValueFlag.CaseBody,
@@ -1262,6 +1256,18 @@ export class GoBuilder extends IBuilder<go.Opcode, go.NodeFlag, go.ValueFlag> {
    */
   public CreateDerefNode(ptr: NodeId): Node {
     return this.createUnary(go.Opcode.Deref, ptr);
+  }
+
+  public CreateReferenceNode(value: string): Node {
+    return {
+      opcode: go.Opcode.Reference,
+      flags: go.NodeFlag.NodeUnary,
+
+      value: {
+        value,
+        flags: go.ValueFlag.None,
+      },
+    };
   }
 
   /**
