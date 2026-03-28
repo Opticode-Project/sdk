@@ -31,7 +31,7 @@ const builder = new GoBuilder(options);
   const packageNode = builder.CreatePackageNode("main");
   const packageId = builder.SetNode(packageNode);
 
-  const imports: NodeId[] = ["fmt", "testing"].map((v) => {
+  const imports: NodeId[] = ["fmt"/*, "testing"*/].map((v) => {
     return builder.SetNode(builder.CreateImportValueNode(v));
   });
 
@@ -45,7 +45,7 @@ const builder = new GoBuilder(options);
     ["Farewell", "Goodbye, World!"],
   ].map((v) => {
     return builder.SetNode(
-      builder.CreateConstValueNode(v[0], GoInt("Test", 32), v[1]),
+      builder.CreateConstValueNode(v[0], GoString(v[0]), v[1]),
     );
   });
 
@@ -59,7 +59,7 @@ const builder = new GoBuilder(options);
     ["Farewell", "Goodbye, World!"],
   ].map((v) => {
     return builder.SetNode(
-      builder.CreateVarValueNode(v[0], GoInt("Test", 32), v[1]),
+      builder.CreateVarValueNode(v[0], GoString(v[0]), v[1]),
     );
   });
 
@@ -67,17 +67,6 @@ const builder = new GoBuilder(options);
   const varId = builder.SetNode(varNode);
 
   builder.ConnectNodes(constId, varId);
-
-  const ConditonNode = builder.CreateEqualNode("67", "76");
-  const ConditonId = builder.SetNode(ConditonNode);
-
-  const BodyNode = builder.CreateVarNode(vars[0]);
-  const BodyId = builder.SetNode(BodyNode);
-
-  const IfNode = builder.CreateIfNode(ConditonId, [BodyId]);
-  const IfId = builder.SetNode(IfNode);
-
-  builder.ConnectNodes(varId, IfId);
 
   const testFunc = GoFunc("testFunc", [
     ["a", GoInt("int8", 8)]
@@ -95,7 +84,7 @@ const builder = new GoBuilder(options);
   );
   const structTypeId = builder.SetNode(structTypeNode);
   
-  builder.ConnectNodes(IfId, structTypeId);
+  builder.ConnectNodes(constId, structTypeId);
 
   // Interface
   const interf = new GoInterface();
@@ -112,6 +101,33 @@ const builder = new GoBuilder(options);
   const funcTypeNode = builder.CreateTypeNode(testFunc);
   const funcTypeId = builder.SetNode(funcTypeNode);
   builder.ConnectNodes(interfTypeId, funcTypeId);
+  
+  // func main() {}
+  const mainFuncType = GoFunc("main", [], []);
+
+  let body: NodeId[] = [];
+  for (let i = 0; i < 1; i++) {
+    const varValue = builder.SetNode(
+      builder.CreateVarValueNode("N" + i, GoInt("Test", 32), i.toString()),
+    );
+
+    const varId = builder.SetNode(builder.CreateVarNode(varValue));
+    body.push(varId);
+  }
+
+
+  const ConditonNode = builder.CreateEqualNode("67", "76");
+  const ConditonId = builder.SetNode(ConditonNode);
+
+  const Greeting = builder.SetNode(builder.CreateReferenceNode("Greeting"));
+  const BodyId = builder.SetNode(
+    builder.CreateCallNode("fmt.Println", [ Greeting ]),
+  );
+
+  const IfNode = builder.CreateIfNode(ConditonId, [ BodyId ]);
+  const IfId = builder.SetNode(IfNode);
+
+  body.push(IfId)
 
   // switch statement
   // case 1: fmt.Println("one")
@@ -134,9 +150,10 @@ const builder = new GoBuilder(options);
   );
 
 
-  // default: fmt.Println("other")
+  // default: fmt.Println(Farewell)
+  const Farewell = builder.SetNode(builder.CreateReferenceNode("Farewell"));
   const defaultBody = builder.SetNode(
-    builder.CreateCallNode("fmt.Println", ["other"])
+    builder.CreateCallNode("fmt.Println", [ Farewell ])
   );
 
   const defaultNode = builder.SetNode(
@@ -146,27 +163,11 @@ const builder = new GoBuilder(options);
   // switch x { ... }
   const switchId = builder.SetNode(
     builder.CreateSwitchNode(
-      builder.SetNode(builder.CreateReferenceNode("x")),
+      builder.SetNode(builder.CreateReferenceNode("N0")),
       [ firstCase, secondCase, defaultNode ])
   );
 
-  builder.ConnectNodes(funcTypeId, switchId);
-  
-  // func main() {}
-  const mainFuncType = GoFunc("main", [], []);
-
-  let body: NodeId[] = [];
-  for (let i = 0; i < 5; i++) {
-    const varValue = builder.SetNode(
-      builder.CreateVarValueNode("N" + i, GoInt("Test", 32), i.toString()),
-    );
-
-    const varId = builder.SetNode(builder.CreateVarNode(varValue));
-    const callId = builder.SetNode(
-      builder.CreateCallNode("fmt.Println", [varId]),
-    );
-    body.push(varId);
-  }
+  body.push(switchId)
 
   const paramNode = builder.CreateConstValueNode(
     "meow",
@@ -183,7 +184,7 @@ const builder = new GoBuilder(options);
   };
   const mainFuncNode = builder.CreateFuncNode(mainFuncDef);
   const mainFuncId = builder.SetNode(mainFuncNode);
-  builder.ConnectNodes(switchId, mainFuncId);
+  builder.ConnectNodes(funcTypeId, mainFuncId);
 
   
   builder.Export();
